@@ -1,0 +1,1 @@
+ALTER TABLE `certificates` MODIFY COLUMN `status` enum('draft','issued','signed','archived') NOT NULL DEFAULT 'draft';

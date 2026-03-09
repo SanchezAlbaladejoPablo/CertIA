@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body { margin: 0; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #FFFFFF;
+            font-family: 'Montserrat', sans-serif;
+            color: #334155;
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            position: relative;
+            overflow: hidden;
+        }
+        .left-accent {
+            background-color: #1B3A4B;
+            border-right: 4px solid #EAB308;
+            height: 100%;
+        }
+        .content {
+            padding-top: 60px;
+            padding-left: 60px;
+            padding-right: 60px;
+        }
+        h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 48px;
+            color: #1B3A4B;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 10px;
+        }
+        .technical-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+        .tech-item {
+            margin-bottom: 40px;
+        }
+        .tech-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .tech-header i {
+            font-size: 28px;
+            color: #EAB308;
+        }
+        .tech-header h3 {
+            font-size: 24px;
+            color: #1B3A4B;
+            font-weight: 600;
+        }
+        .tech-list {
+            list-style: none;
+            padding-left: 43px;
+        }
+        .tech-list li {
+            font-size: 18px;
+            margin-bottom: 10px;
+            position: relative;
+            line-height: 1.4;
+        }
+        .tech-list li::before {
+            content: "•";
+            color: #EAB308;
+            font-weight: bold;
+            display: inline-block;
+            width: 1em;
+            margin-left: -1em;
+        }
+        .highlight-box {
+            background-color: #f8fafc;
+            border-left: 6px solid #1B3A4B;
+            padding: 20px 30px;
+            margin-top: 20px;
+        }
+        .highlight-box p {
+            font-size: 16px;
+            font-style: italic;
+            color: #475569;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="left-accent"></div>
+        <div class="content">
+            <h2>Motor de Cálculos Eléctricos</h2>
+            <div class="technical-grid">
+                <div class="tech-item">
+                    <div class="tech-header">
+                        <i class="fas fa-calculator"></i>
+                        <h3>Cálculos Automáticos</h3>
+                    </div>
+                    <ul class="tech-list">
+                        <li>Secciones mínimas de cable (ITC-BT-07).</li>
+                        <li>Caída de tensión máxima permitida.</li>
+                        <li>Intensidad de cortocircuito.</li>
+                        <li>Protecciones PIA y RCD optimizadas.</li>
+                    </ul>
+                </div>
+                <div class="tech-item">
+                    <div class="tech-header">
+                        <i class="fas fa-microchip"></i>
+                        <h3>Versatilidad Técnica</h3>
+                    </div>
+                    <ul class="tech-list">
+                        <li>Soporte para Cobre (Cu) y Aluminio (Al).</li>
+                        <li>Configuraciones Monofásicas y Trifásicas.</li>
+                        <li>Secciones normalizadas hasta 240 mm².</li>
+                        <li>Cálculo de resistencia de tierra según ITC-BT-18.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="highlight-box">
+                <p>"El motor garantiza el cumplimiento del 100% de las exigencias del Reglamento Electrotécnico para Baja Tensión (REBT), eliminando el error humano en el diseño de la instalación."</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

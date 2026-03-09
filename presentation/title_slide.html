@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body { margin: 0; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #FFFFFF;
+            font-family: 'Montserrat', sans-serif;
+            color: #334155;
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            position: relative;
+            overflow: hidden;
+        }
+        .left-accent {
+            background-color: #1B3A4B;
+            border-right: 4px solid #EAB308;
+            height: 100%;
+        }
+        .content {
+            padding: 80px 60px 40px 60px; /* keep top padding, reduce right/left and bottom */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .title-group {
+            border-left: 12px solid #1B3A4B;
+            padding-left: 40px;
+            margin-bottom: 20px; /* reduced from 40 */
+        }
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 84px;
+            color: #1B3A4B;
+            line-height: 1.1;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 32px;
+            color: #334155;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .info-footer {
+            margin-top: 40px; /* reduced from 100 */
+            display: flex;
+            gap: 24px;
+            font-size: 18px;
+            color: #64748b;
+        }
+        .tag {
+            background-color: #EAB308;
+            color: #1B3A4B;
+            padding: 6px 12px; /* slightly reduced */
+            font-weight: 600;
+            border-radius: 2px;
+            font-size: 16px;
+            display: inline-block;
+        }
+        .icon-bg {
+            position: absolute;
+            right: -40px;
+            bottom: -40px;
+            font-size: 360px; /* reduced from 400 */
+            color: #f1f5f9;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="left-accent"></div>
+        <div class="content">
+            <i class="fas fa-bolt icon-bg" aria-hidden="true"></i>
+            <div style="z-index: 1;">
+                <div class="tag">VERSIÓN 1.1.0 • MARZO 2026</div>
+                <div class="title-group">
+                    <h1>CertIA</h1>
+                    <div class="subtitle">Informe de Estado del Proyecto</div>
+                </div>
+                <p style="font-size: 24px; max-width: 600px; line-height: 1.6; margin: 0 0 8px 0;">
+                    Transformando la Certificación Eléctrica mediante Inteligencia Artificial y Automatización Normativa.
+                </p>
+                <div class="info-footer">
+                    <span><i class="fas fa-calendar-alt" style="margin-right:8px;"></i> 09 de Marzo, 2026</span>
+                    <span><i class="fas fa-user-tie" style="margin-right:8px;"></i> Reporte de Ingeniería</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

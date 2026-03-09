@@ -1,0 +1,108 @@
+{
+  "project_info": {
+    "title": "CertIA: Transformando la Certificación Eléctrica con IA",
+    "created": 1773077808.989671,
+    "last_updated": 1773077980.4430954,
+    "total_slides": 8
+  },
+  "slides": [
+    {
+      "id": "title_slide",
+      "state": "edited",
+      "pageNum": 1
+    },
+    {
+      "id": "overview_slide",
+      "state": "edited",
+      "pageNum": 2
+    },
+    {
+      "id": "calculations_slide",
+      "state": "edited",
+      "pageNum": 3
+    },
+    {
+      "id": "ai_suggestions_slide",
+      "state": "edited",
+      "pageNum": 4
+    },
+    {
+      "id": "diagrams_slide",
+      "state": "edited",
+      "pageNum": 5
+    },
+    {
+      "id": "certificates_slide",
+      "state": "edited",
+      "pageNum": 6
+    },
+    {
+      "id": "progress_slide",
+      "state": "edited",
+      "pageNum": 7
+    },
+    {
+      "id": "roadmap_slide",
+      "state": "edited",
+      "pageNum": 8
+    }
+  ],
+  "outline": [
+    {
+      "id": "title_slide",
+      "title": "CertIA: Transformando la Certificación Eléctrica con IA",
+      "summary": "Diapositiva de portada con el título del proyecto y el objetivo principal.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "overview_slide",
+      "title": "CertIA: Digitalización y Automatización según el REBT",
+      "summary": "Resumen de los objetivos, cumplimiento normativo y estado global del proyecto.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "calculations_slide",
+      "title": "Motor de Cálculos Eléctricos de Alta Precisión",
+      "summary": "Detalles técnicos sobre los cálculos automáticos de secciones, caída de tensión y protecciones.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "ai_suggestions_slide",
+      "title": "IA Generativa: Sugerencias Inteligentes de Circuitos",
+      "summary": "Explicación de cómo la IA automatiza la propuesta de circuitos según el tipo de instalación.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "diagrams_slide",
+      "title": "Esquemas Unifilares Automatizados con Mermaid",
+      "summary": "Muestra la capacidad de generación de diagramas técnicos en tiempo real.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "certificates_slide",
+      "title": "Certificados Profesionales y Descarga PDF",
+      "summary": "Descripción del proceso de generación y exportación de certificados oficiales.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "progress_slide",
+      "title": "Progreso de Implementación: Fases 2 a 7 Completadas",
+      "summary": "Estado de las fases de infraestructura, gestión, wizard y backend.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    },
+    {
+      "id": "roadmap_slide",
+      "title": "Próximos Pasos: Hacia el Lanzamiento Final",
+      "summary": "Roadmap con las tareas pendientes como suscripciones, dashboard y pulido UI.",
+      "image_plan": "Use a suitable image if needed",
+      "slide_template_key": ""
+    }
+  ]
+}

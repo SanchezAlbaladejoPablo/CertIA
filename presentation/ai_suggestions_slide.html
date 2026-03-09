@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <style>
+        body { margin: 0; }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            background-color: #FFFFFF;
+            font-family: 'Montserrat', sans-serif;
+            color: #334155;
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            position: relative;
+            overflow: hidden;
+        }
+        .left-accent {
+            background-color: #1B3A4B;
+            border-right: 4px solid #EAB308;
+            height: 100%;
+        }
+        .content {
+            padding-top: 60px;
+            padding-left: 60px;
+            padding-right: 60px;
+        }
+        h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 48px;
+            color: #1B3A4B;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 10px;
+        }
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 60px;
+        }
+        .ai-features {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .feature-item {
+            display: flex;
+            gap: 20px;
+        }
+        .feature-item i {
+            font-size: 28px;
+            color: #1B3A4B;
+            margin-top: 5px;
+        }
+        .feature-text h3 {
+            font-size: 24px;
+            color: #1B3A4B;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        .feature-text p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #475569;
+        }
+        .installation-types {
+            background-color: #1B3A4B;
+            color: #FFFFFF;
+            padding-top: 10px; /* reduced to save vertical space */
+            padding-left: 40px;
+            padding-right: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px; /* reduced gaps between items */
+        }
+        .type-card {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 10px;
+        }
+        .type-card h4 {
+            color: #EAB308;
+            font-size: 20px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .type-card p {
+            font-size: 16px;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+        .efficiency-tag {
+            display: inline-block;
+            background-color: #EAB308;
+            color: #1B3A4B;
+            padding: 8px 16px;
+            font-weight: 700;
+            font-size: 14px;
+            margin-top: 8px; /* reduced to bring it higher */
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="left-accent"></div>
+        <div class="content">
+            <h2>IA Generativa: Sugerencias Inteligentes</h2>
+            <div class="main-grid">
+                <div class="ai-features">
+                    <div class="feature-item">
+                        <i class="fas fa-magic"></i>
+                        <div class="feature-text">
+                            <h3>Propuesta Automática</h3>
+                            <p>Generación instantánea de circuitos típicos (C1-C5) basados en el uso previsto de la instalación.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-sliders-h"></i>
+                        <div class="feature-text">
+                            <h3>Adaptación Dinámica</h3>
+                            <p>Ajuste automático de protecciones y secciones según la potencia total contratada y el tipo de suministro.</p>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <div class="feature-text">
+                            <h3>Optimización de Tiempo</h3>
+                            <p>Reducción del 70% en el tiempo de entrada de datos manual mediante plantillas inteligentes.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="installation-types">
+                    <div class="type-card">
+                        <h4>Vivienda Unifamiliar</h4>
+                        <p>Circuitos básicos (C1-C5) + aire acondicionado y calefacción.</p>
+                    </div>
+                    <div class="type-card">
+                        <h4>Local Comercial</h4>
+                        <p>Iluminación de emergencia, tomas de fuerza y climatización.</p>
+                    </div>
+                    <div class="type-card">
+                        <h4>Nave Industrial</h4>
+                        <p>Suministros trifásicos, motores y cuadros secundarios.</p>
+                    </div>
+                    <div class="efficiency-tag">MÁXIMA EFICIENCIA OPERATIVA</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

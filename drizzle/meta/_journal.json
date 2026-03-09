@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1773074420657,
+      "tag": "0000_normal_wrecker",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1773074582711,
+      "tag": "0001_damp_genesis",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1773084586585,
+      "tag": "0002_striped_ink",
+      "breakpoints": true
+    }
+  ]
+}
