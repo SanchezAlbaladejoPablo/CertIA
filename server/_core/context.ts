@@ -1,6 +1,5 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
-import { sdk } from "./sdk";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -8,21 +7,25 @@ export type TrpcContext = {
   user: User | null;
 };
 
+// Demo mode: usuario fijo sin autenticación
+const DEMO_USER: User = {
+  id: 1,
+  openId: "demo-user-001",
+  name: "Instalador Demo",
+  email: "demo@certia.io",
+  loginMethod: "demo",
+  role: "user",
+  createdAt: new Date("2026-01-01"),
+  updatedAt: new Date("2026-01-01"),
+  lastSignedIn: new Date(),
+};
+
 export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
-  let user: User | null = null;
-
-  try {
-    user = await sdk.authenticateRequest(opts.req);
-  } catch (error) {
-    // Authentication is optional for public procedures.
-    user = null;
-  }
-
   return {
     req: opts.req,
     res: opts.res,
-    user,
+    user: DEMO_USER,
   };
 }

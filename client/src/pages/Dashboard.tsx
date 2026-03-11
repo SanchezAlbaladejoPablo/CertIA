@@ -4,10 +4,13 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Menu, LogOut, Settings, FileText, Users, Home, Zap } from "lucide-react";
-import CertificatesPage from "./dashboard/Certificates";
+import { Menu, LogOut, Settings, FileText, Users, Zap, LayoutTemplate, CalendarClock, BookOpen } from "lucide-react";
+import CertificatesManagement from "./dashboard/certificates-management";
 import ClientsPage from "./dashboard/Clients";
 import SettingsPage from "./dashboard/Settings";
+import TemplatesPage from "./dashboard/Templates";
+import InspectionsPage from "./dashboard/Inspections";
+import HowItWorksPage from "./dashboard/HowItWorks";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -63,6 +66,27 @@ export default function Dashboard() {
             collapsed={!sidebarOpen}
           />
           <NavItem
+            icon={<LayoutTemplate className="w-5 h-5" />}
+            label="Plantillas"
+            active={activeTab === "templates"}
+            onClick={() => setActiveTab("templates")}
+            collapsed={!sidebarOpen}
+          />
+          <NavItem
+            icon={<CalendarClock className="w-5 h-5" />}
+            label="Revisiones"
+            active={activeTab === "inspections"}
+            onClick={() => setActiveTab("inspections")}
+            collapsed={!sidebarOpen}
+          />
+          <NavItem
+            icon={<BookOpen className="w-5 h-5" />}
+            label="Cómo funciona"
+            active={activeTab === "howitworks"}
+            onClick={() => setActiveTab("howitworks")}
+            collapsed={!sidebarOpen}
+          />
+          <NavItem
             icon={<Settings className="w-5 h-5" />}
             label="Configuración"
             active={activeTab === "settings"}
@@ -109,7 +133,7 @@ export default function Dashboard() {
             </TabsList>
 
             <TabsContent value="certificates" className="space-y-4">
-              <CertificatesPage />
+              <CertificatesManagement />
             </TabsContent>
 
             <TabsContent value="clients" className="space-y-4">
@@ -122,8 +146,11 @@ export default function Dashboard() {
           </Tabs>
 
           {/* Content by Tab */}
-          {activeTab === "certificates" && <CertificatesPage />}
+          {activeTab === "certificates" && <CertificatesManagement />}
           {activeTab === "clients" && <ClientsPage />}
+          {activeTab === "templates" && <TemplatesPage />}
+          {activeTab === "inspections" && <InspectionsPage />}
+          {activeTab === "howitworks" && <HowItWorksPage />}
           {activeTab === "settings" && <SettingsPage />}
         </div>
       </main>

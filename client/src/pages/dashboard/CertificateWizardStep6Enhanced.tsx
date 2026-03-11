@@ -1,8 +1,410 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Download, Loader2, RefreshCw, Eye } from "lucide-react";
-import { Mermaid } from "@streamdown/mermaid";\n\ninterface Circuit {\n  circuitNumber: string;\n  circuitName: string;\n  installedPower: number;\n  cableSection: string;\n  mcbRating: number;\n  rcdRequired: boolean;\n}\n\ninterface Step6Props {\n  formData: {\n    clientId?: number;\n    newClient?: { name?: string; dniNif?: string };\n    installationId?: number;\n    newInstallation?: { name?: string; address?: string };\n    installationType: string;\n    supplyVoltage: number;\n    installedPower: number;\n    phases: number;\n    diLength: string;\n    diCableSection: string;\n    boardLocation: string;\n    igaRating: number;\n    idSensitivity: number;\n    earthResistance: string;\n    circuits: Circuit[];\n    insulationResistance: string;\n    continuityContinuity: string;\n    rcdTestCurrent: number;\n    rcdTestTime: number;\n    observations: string;\n  };\n  clients?: any[];\n  installations?: any[];\n}\n\nexport default function Step6Enhanced({\n  formData,\n  clients,\n  installations,\n}: Step6Props) {\n  const [mermaidCode, setMermaidCode] = useState<string>(\"\");\n  const [pdfHtml, setPdfHtml] = useState<string>(\"\");\n  const [activeTab, setActiveTab] = useState<string>(\"summary\");\n\n  const client = clients?.find((c) => c.id === formData.clientId);\n  const installation = installations?.find((i) => i.id === formData.installationId);\n\n  // Queries para generar diagrama y PDF\n  const generateDiagramQuery = trpc.ai.generateDiagram.useQuery(\n    {\n      installationType: formData.installationType,\n      supplyVoltage: formData.supplyVoltage,\n      supplyPhases: formData.phases,\n      groundingSystem: \"TT\",\n      mainSwitchRating: formData.igaRating,\n      mainRcdRating: formData.idSensitivity,\n      circuits: formData.circuits.map((c) => ({\n        circuitNumber: c.circuitNumber,\n        circuitName: c.circuitName,\n        installedPower: c.installedPower,\n        cableSection: parseFloat(c.cableSection),\n        mcbRating: c.mcbRating,\n        rcdRequired: c.rcdRequired,\n      })),\n    },\n    { enabled: false }\n  );\n\n  const generatePdfQuery = trpc.pdf.generateCertificate.useQuery(\n    {\n      certificateId: 0, // Será actualizado cuando se cree el certificado\n      clientName: client?.name || formData.newClient?.name || \"-\",\n      clientDni: client?.dniNif || formData.newClient?.dniNif,\n      clientAddress: client?.address,\n      clientPhone: client?.phone,\n      installationType: formData.installationType,\n      installationAddress: installation?.address || formData.newInstallation?.address || \"-\",\n      installationCity: installation?.city || formData.newInstallation?.city,\n      installationProvince: installation?.province || formData.newInstallation?.province,\n      postalCode: installation?.postalCode || formData.newInstallation?.postalCode,\n      cadastralReference: installation?.cadastralReference,\n      cups: installation?.cups,\n      supplyVoltage: formData.supplyVoltage,\n      supplyPhases: formData.phases,\n      installedPower: formData.installedPower,\n      mainSwitchRating: formData.igaRating,\n      mainRcdRating: formData.idSensitivity,\n      earthResistance: parseFloat(formData.earthResistance) || 0,\n      diLength: parseFloat(formData.diLength) || 0,\n      diCableSection: parseFloat(formData.diCableSection) || 0,\n      diCableMaterial: \"Cu\",\n      insulationResistance: parseFloat(formData.insulationResistance) || 0,\n      continuityContinuity: parseFloat(formData.continuityContinuity) || 0,\n      rcdTestCurrent: formData.rcdTestCurrent,\n      rcdTestTime: formData.rcdTestTime,\n      observations: formData.observations,\n      circuits: formData.circuits.map((c) => ({\n        circuitNumber: c.circuitNumber,\n        circuitName: c.circuitName,\n        installedPower: c.installedPower,\n        cableSection: parseFloat(c.cableSection),\n        mcbRating: c.mcbRating,\n        rcdRequired: c.rcdRequired,\n      })),\n    },\n    { enabled: false }\n  );\n\n  const handleGenerateDiagram = async () => {\n    try {\n      const result = await generateDiagramQuery.refetch();\n      if (result.data?.data?.mermaidCode) {\n        setMermaidCode(result.data.data.mermaidCode);\n        setActiveTab(\"diagram\");\n        toast.success(\"Esquema unifilar generado\");\n      }\n    } catch (error) {\n      toast.error(\"Error al generar esquema\");\n    }\n  };\n\n  const handleGeneratePdf = async () => {\n    try {\n      const result = await generatePdfQuery.refetch();\n      if (result.data?.data?.html) {\n        setPdfHtml(result.data.data.html);\n        setActiveTab(\"pdf\");\n        toast.success(\"PDF generado\");\n      }\n    } catch (error) {\n      toast.error(\"Error al generar PDF\");\n    }\n  };\n\n  const handleDownloadPdf = () => {\n    if (!pdfHtml) {\n      toast.error(\"Genera el PDF primero\");\n      return;\n    }\n\n    const element = document.createElement(\"a\");\n    const file = new Blob([pdfHtml], { type: \"text/html\" });\n    element.href = URL.createObjectURL(file);\n    element.download = `certificado-${Date.now()}.html`;\n    document.body.appendChild(element);\n    element.click();\n    document.body.removeChild(element);\n    toast.success(\"Descargando certificado...\");\n  };\n\n  return (\n    <div className=\"space-y-6\">\n      <Tabs value={activeTab} onValueChange={setActiveTab} className=\"w-full\">\n        <TabsList className=\"grid w-full grid-cols-4\">\n          <TabsTrigger value=\"summary\">Resumen</TabsTrigger>\n          <TabsTrigger value=\"diagram\">Esquema</TabsTrigger>\n          <TabsTrigger value=\"pdf\">Certificado</TabsTrigger>\n          <TabsTrigger value=\"checklist\">Verificación</TabsTrigger>\n        </TabsList>\n\n        {/* TAB 1: RESUMEN */}\n        <TabsContent value=\"summary\" className=\"space-y-4\">\n          <div>\n            <h3 className=\"font-semibold text-gray-900 mb-4\">Resumen del Certificado</h3>\n            <div className=\"grid grid-cols-2 gap-6\">\n              <div>\n                <p className=\"text-sm text-gray-600 mb-1\">Cliente</p>\n                <p className=\"font-semibold\">{client?.name || formData.newClient?.name}</p>\n                <p className=\"text-sm text-gray-500\">{client?.dniNif || formData.newClient?.dniNif}</p>\n              </div>\n              <div>\n                <p className=\"text-sm text-gray-600 mb-1\">Instalación</p>\n                <p className=\"font-semibold\">{installation?.name || formData.newInstallation?.name}</p>\n                <p className=\"text-sm text-gray-500\">{installation?.address || formData.newInstallation?.address}</p>\n              </div>\n            </div>\n          </div>\n\n          <div className=\"border-t pt-6\">\n            <h3 className=\"font-semibold text-gray-900 mb-4\">Datos Técnicos</h3>\n            <div className=\"grid grid-cols-3 gap-4\">\n              <div>\n                <p className=\"text-sm text-gray-600\">Tipo de instalación</p>\n                <p className=\"font-semibold\">{formData.installationType}</p>\n              </div>\n              <div>\n                <p className=\"text-sm text-gray-600\">Tensión</p>\n                <p className=\"font-semibold\">{formData.supplyVoltage}V {formData.phases === 1 ? \"Monofásico\" : \"Trifásico\"}</p>\n              </div>\n              <div>\n                <p className=\"text-sm text-gray-600\">Potencia instalada</p>\n                <p className=\"font-semibold\">{formData.installedPower}W</p>\n              </div>\n            </div>\n          </div>\n\n          <div className=\"border-t pt-6\">\n            <h3 className=\"font-semibold text-gray-900 mb-4\">Protecciones Generales</h3>\n            <div className=\"grid grid-cols-3 gap-4 text-sm\">\n              <div>\n                <p className=\"text-gray-600\">IGA</p>\n                <p className=\"font-semibold\">{formData.igaRating}A</p>\n              </div>\n              <div>\n                <p className=\"text-gray-600\">Diferencial</p>\n                <p className=\"font-semibold\">{formData.idSensitivity}mA</p>\n              </div>\n              <div>\n                <p className=\"text-gray-600\">Tierra</p>\n                <p className=\"font-semibold\">{formData.earthResistance}Ω</p>\n              </div>\n            </div>\n          </div>\n\n          <div className=\"border-t pt-6\">\n            <h3 className=\"font-semibold text-gray-900 mb-4\">Circuitos ({formData.circuits.length})</h3>\n            <div className=\"space-y-2\">\n              {formData.circuits.map((circuit) => (\n                <div key={circuit.circuitNumber} className=\"flex justify-between items-center p-3 bg-gray-50 rounded-lg\">\n                  <div>\n                    <p className=\"font-semibold\">{circuit.circuitNumber} - {circuit.circuitName}</p>\n                    <p className=\"text-sm text-gray-600\">{circuit.installedPower}W • {circuit.cableSection}mm² • {circuit.mcbRating}A</p>\n                  </div>\n                </div>\n              ))}\n            </div>\n          </div>\n\n          <div className=\"bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6\">\n            <p className=\"text-sm text-blue-900\">\n              ✓ Revisa todos los datos antes de generar el certificado. Una vez creado, podrás editar la mayoría de campos.\n            </p>\n          </div>\n        </TabsContent>\n\n        {/* TAB 2: ESQUEMA UNIFILAR */}\n        <TabsContent value=\"diagram\" className=\"space-y-4\">\n          <div className=\"flex justify-between items-center\">\n            <h3 className=\"font-semibold text-gray-900\">Esquema Unifilar</h3>\n            <Button\n              onClick={handleGenerateDiagram}\n              disabled={generateDiagramQuery.isPending}\n              size=\"sm\"\n            >\n              {generateDiagramQuery.isPending ? (\n                <>\n                  <Loader2 className=\"w-4 h-4 mr-2 animate-spin\" />\n                  Generando...\n                </>\n              ) : (\n                <>\n                  <RefreshCw className=\"w-4 h-4 mr-2\" />\n                  Generar Esquema\n                </>\n              )}\n            </Button>\n          </div>\n\n          {mermaidCode ? (\n            <Card>\n              <CardContent className=\"pt-6\">\n                <div className=\"border rounded-lg p-4 bg-white overflow-auto\">\n                  <Mermaid code={mermaidCode} />\n                </div>\n              </CardContent>\n            </Card>\n          ) : (\n            <Card>\n              <CardContent className=\"pt-6\">\n                <div className=\"text-center py-12 text-gray-500\">\n                  <p>Haz clic en \"Generar Esquema\" para visualizar el diagrama unifilar</p>\n                </div>\n              </CardContent>\n            </Card>\n          )}\n        </TabsContent>\n\n        {/* TAB 3: CERTIFICADO PDF */}\n        <TabsContent value=\"pdf\" className=\"space-y-4\">\n          <div className=\"flex justify-between items-center\">\n            <h3 className=\"font-semibold text-gray-900\">Certificado de Instalación</h3>\n            <div className=\"flex gap-2\">\n              <Button\n                onClick={handleGeneratePdf}\n                disabled={generatePdfQuery.isPending}\n                size=\"sm\"\n                variant=\"outline\"\n              >\n                {generatePdfQuery.isPending ? (\n                  <>\n                    <Loader2 className=\"w-4 h-4 mr-2 animate-spin\" />\n                    Generando...\n                  </>\n                ) : (\n                  <>\n                    <RefreshCw className=\"w-4 h-4 mr-2\" />\n                    Generar PDF\n                  </>\n                )}\n              </Button>\n              {pdfHtml && (\n                <Button\n                  onClick={handleDownloadPdf}\n                  size=\"sm\"\n                  className=\"bg-green-600 hover:bg-green-700\"\n                >\n                  <Download className=\"w-4 h-4 mr-2\" />\n                  Descargar\n                </Button>\n              )}\n            </div>\n          </div>\n\n          {pdfHtml ? (\n            <Card>\n              <CardContent className=\"pt-6\">\n                <div className=\"border rounded-lg p-4 bg-white max-h-96 overflow-auto\">\n                  <iframe\n                    srcDoc={pdfHtml}\n                    className=\"w-full h-96 border-0\"\n                    title=\"Certificado PDF\"\n                  />\n                </div>\n              </CardContent>\n            </Card>\n          ) : (\n            <Card>\n              <CardContent className=\"pt-6\">\n                <div className=\"text-center py-12 text-gray-500\">\n                  <p>Haz clic en \"Generar PDF\" para crear el certificado</p>\n                </div>\n              </CardContent>\n            </Card>\n          )}\n        </TabsContent>\n\n        {/* TAB 4: VERIFICACIÓN */}\n        <TabsContent value=\"checklist\" className=\"space-y-4\">\n          <h3 className=\"font-semibold text-gray-900 mb-4\">Lista de Verificación</h3>\n          <div className=\"space-y-3\">\n            <div className=\"flex items-center gap-3 p-3 border rounded-lg\">\n              <input type=\"checkbox\" checked={!!formData.clientId || !!formData.newClient?.name} readOnly className=\"w-4 h-4\" />\n              <span className={formData.clientId || formData.newClient?.name ? \"text-green-700\" : \"text-gray-600\"}>\n                Cliente seleccionado o creado\n              </span>\n            </div>\n            <div className=\"flex items-center gap-3 p-3 border rounded-lg\">\n              <input type=\"checkbox\" checked={!!formData.installationId || !!formData.newInstallation?.name} readOnly className=\"w-4 h-4\" />\n              <span className={formData.installationId || formData.newInstallation?.name ? \"text-green-700\" : \"text-gray-600\"}>\n                Instalación seleccionada o creada\n              </span>\n            </div>\n            <div className=\"flex items-center gap-3 p-3 border rounded-lg\">\n              <input type=\"checkbox\" checked={formData.circuits.length > 0} readOnly className=\"w-4 h-4\" />\n              <span className={formData.circuits.length > 0 ? \"text-green-700\" : \"text-gray-600\"}>\n                Circuitos añadidos ({formData.circuits.length})\n              </span>\n            </div>\n            <div className=\"flex items-center gap-3 p-3 border rounded-lg\">\n              <input type=\"checkbox\" checked={!!formData.insulationResistance && !!formData.rcdTestCurrent} readOnly className=\"w-4 h-4\" />\n              <span className={formData.insulationResistance && formData.rcdTestCurrent ? \"text-green-700\" : \"text-gray-600\"}>\n                Mediciones eléctricas completadas\n              </span>\n            </div>\n            <div className=\"flex items-center gap-3 p-3 border rounded-lg\">\n              <input type=\"checkbox\" checked={!!mermaidCode} readOnly className=\"w-4 h-4\" />\n              <span className={mermaidCode ? \"text-green-700\" : \"text-gray-600\"}>\n                Esquema unifilar generado\n              </span>\n            </div>\n            <div className=\"flex items-center gap-3 p-3 border rounded-lg\">\n              <input type=\"checkbox\" checked={!!pdfHtml} readOnly className=\"w-4 h-4\" />\n              <span className={pdfHtml ? \"text-green-700\" : \"text-gray-600\"}>\n                Certificado PDF generado\n              </span>\n            </div>\n          </div>\n        </TabsContent>\n      </Tabs>\n    </div>\n  );\n}\n
+import { Download, Loader2, RefreshCw } from "lucide-react";
+import { UnifilarDiagramFromSVG } from "@/components/UnifilarDiagram";
+
+interface Circuit {
+  circuitNumber: string;
+  circuitName: string;
+  installedPower: number;
+  cableSection: string;
+  mcbRating: number;
+  rcdRequired: boolean;
+}
+
+interface Step6Props {
+  formData: {
+    clientId?: number;
+    newClient?: { name?: string; dniNif?: string };
+    installationId?: number;
+    newInstallation?: { name?: string; address?: string; city?: string; province?: string; postalCode?: string };
+    installationType: string;
+    supplyVoltage: number;
+    installedPower: number;
+    phases: number;
+    groundingSystem?: string;
+    diLength: string;
+    diCableSection: string;
+    boardLocation: string;
+    igaRating: number;
+    idSensitivity: number;
+    earthResistance: string;
+    circuits: Circuit[];
+    insulationResistance: string;
+    continuityContinuity: string;
+    rcdTestCurrent: number;
+    rcdTestTime: number;
+    observations: string;
+  };
+  clients?: any[];
+  installations?: any[];
+}
+
+export default function Step6Enhanced({ formData, clients, installations }: Step6Props) {
+  const [pdfHtml, setPdfHtml] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("summary");
+  const [unifilarRequested, setUnifilarRequested] = useState(false);
+
+  const client = clients?.find((c) => c.id === formData.clientId);
+  const installation = installations?.find((i) => i.id === formData.installationId);
+
+  const generatePdfQuery = trpc.pdf.generateCertificate.useQuery(
+    {
+      certificateId: 0,
+      clientName: client?.name || formData.newClient?.name || "-",
+      clientDni: client?.dniNif || formData.newClient?.dniNif,
+      clientAddress: client?.address,
+      clientPhone: client?.phone,
+      installationType: formData.installationType,
+      installationAddress: installation?.address || formData.newInstallation?.address || "-",
+      installationCity: installation?.city || formData.newInstallation?.city,
+      installationProvince: installation?.province || formData.newInstallation?.province,
+      postalCode: installation?.postalCode || formData.newInstallation?.postalCode,
+      cadastralReference: installation?.cadastralReference,
+      cups: installation?.cups,
+      supplyVoltage: formData.supplyVoltage,
+      supplyPhases: formData.phases,
+      installedPower: formData.installedPower,
+      mainSwitchRating: formData.igaRating,
+      mainRcdRating: formData.idSensitivity,
+      earthResistance: parseFloat(formData.earthResistance) || 0,
+      diLength: parseFloat(formData.diLength) || 0,
+      diCableSection: parseFloat(formData.diCableSection) || 0,
+      diCableMaterial: "Cu",
+      insulationResistance: parseFloat(formData.insulationResistance) || 0,
+      continuityContinuity: parseFloat(formData.continuityContinuity) || 0,
+      rcdTestCurrent: formData.rcdTestCurrent,
+      rcdTestTime: formData.rcdTestTime,
+      observations: formData.observations,
+      circuits: formData.circuits.map((c) => ({
+        circuitNumber: c.circuitNumber,
+        circuitName: c.circuitName,
+        installedPower: c.installedPower,
+        cableSection: parseFloat(c.cableSection),
+        mcbRating: c.mcbRating,
+        rcdRequired: c.rcdRequired,
+      })),
+    },
+    { enabled: false }
+  );
+
+  const unifilarQuery = trpc.ai.generateDiagram.useQuery(
+    {
+      installationType: formData.installationType,
+      supplyVoltage: formData.supplyVoltage,
+      supplyPhases: formData.phases,
+      groundingSystem: formData.groundingSystem ?? "TT",
+      mainSwitchRating: formData.igaRating,
+      mainRcdRating: formData.idSensitivity,
+      circuits: formData.circuits.map((c) => ({
+        circuitNumber: c.circuitNumber,
+        circuitName: c.circuitName,
+        installedPower: c.installedPower,
+        cableSection: parseFloat(c.cableSection),
+        mcbRating: c.mcbRating,
+        rcdRequired: c.rcdRequired,
+      })),
+    },
+    { enabled: unifilarRequested }
+  );
+
+  const handleGeneratePdf = async () => {
+    try {
+      const result = await generatePdfQuery.refetch();
+      if (result.data?.html) {
+        setPdfHtml(result.data.html);
+        setActiveTab("pdf");
+        toast.success("PDF generado");
+      }
+    } catch {
+      toast.error("Error al generar PDF");
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    if (!pdfHtml) {
+      toast.error("Genera el PDF primero");
+      return;
+    }
+    const element = document.createElement("a");
+    const file = new Blob([pdfHtml], { type: "text/html" });
+    element.href = URL.createObjectURL(file);
+    element.download = `certificado-${Date.now()}.html`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    toast.success("Descargando certificado...");
+  };
+
+  return (
+    <div className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="summary">Resumen</TabsTrigger>
+          <TabsTrigger value="pdf">Certificado</TabsTrigger>
+          <TabsTrigger value="checklist">Verificación</TabsTrigger>
+          <TabsTrigger value="unifilar">Unifilar</TabsTrigger>
+        </TabsList>
+
+        {/* TAB 1: RESUMEN */}
+        <TabsContent value="summary" className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-4">Resumen del Certificado</h3>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Cliente</p>
+                <p className="font-semibold">{client?.name || formData.newClient?.name}</p>
+                <p className="text-sm text-gray-500">{client?.dniNif || formData.newClient?.dniNif}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Instalación</p>
+                <p className="font-semibold">{installation?.name || formData.newInstallation?.name}</p>
+                <p className="text-sm text-gray-500">{installation?.address || formData.newInstallation?.address}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Datos Técnicos</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-gray-600">Tipo de instalación</p>
+                <p className="font-semibold">{formData.installationType}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Tensión</p>
+                <p className="font-semibold">
+                  {formData.supplyVoltage}V {formData.phases === 1 ? "Monofásico" : "Trifásico"}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">Potencia instalada</p>
+                <p className="font-semibold">{formData.installedPower}W</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-6">
+            <h3 className="font-semibold text-gray-900 mb-4">Protecciones Generales</h3>
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div>
+                <p className="text-gray-600">IGA</p>
+                <p className="font-semibold">{formData.igaRating}A</p>
+              </div>
+              <div>
+                <p className="text-gray-600">Diferencial</p>
+                <p className="font-semibold">{formData.idSensitivity}mA</p>
+              </div>
+              <div>
+                <p className="text-gray-600">Tierra</p>
+                <p className="font-semibold">{formData.earthResistance}Ω</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-6">
+            <h3 className="font-semibold text-gray-900 mb-4">
+              Circuitos ({formData.circuits.length})
+            </h3>
+            <div className="space-y-2">
+              {formData.circuits.map((circuit) => (
+                <div
+                  key={circuit.circuitNumber}
+                  className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                >
+                  <div>
+                    <p className="font-semibold">
+                      {circuit.circuitNumber} - {circuit.circuitName}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {circuit.installedPower}W · {circuit.cableSection}mm² · {circuit.mcbRating}A
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+            <p className="text-sm text-blue-900">
+              Revisa todos los datos antes de generar el certificado. Una vez creado, podrás editar
+              la mayoría de campos.
+            </p>
+          </div>
+        </TabsContent>
+
+        {/* TAB 2: CERTIFICADO PDF */}
+        <TabsContent value="pdf" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="font-semibold text-gray-900">Certificado de Instalación</h3>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleGeneratePdf}
+                disabled={generatePdfQuery.isPending}
+                size="sm"
+                variant="outline"
+              >
+                {generatePdfQuery.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Generando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Generar PDF
+                  </>
+                )}
+              </Button>
+              {pdfHtml && (
+                <Button
+                  onClick={handleDownloadPdf}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Descargar
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {pdfHtml ? (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="border rounded-lg p-4 bg-white max-h-96 overflow-auto">
+                  <iframe
+                    srcDoc={pdfHtml}
+                    className="w-full h-96 border-0"
+                    title="Certificado PDF"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center py-12 text-gray-500">
+                  <p>Haz clic en "Generar PDF" para crear el certificado</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* TAB 3: VERIFICACIÓN */}
+        <TabsContent value="checklist" className="space-y-4">
+          <h3 className="font-semibold text-gray-900 mb-4">Lista de Verificación</h3>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 border rounded-lg">
+              <input
+                type="checkbox"
+                checked={!!formData.clientId || !!formData.newClient?.name}
+                readOnly
+                className="w-4 h-4"
+              />
+              <span
+                className={
+                  formData.clientId || formData.newClient?.name ? "text-green-700" : "text-gray-600"
+                }
+              >
+                Cliente seleccionado o creado
+              </span>
+            </div>
+            <div className="flex items-center gap-3 p-3 border rounded-lg">
+              <input
+                type="checkbox"
+                checked={!!formData.installationId || !!formData.newInstallation?.name}
+                readOnly
+                className="w-4 h-4"
+              />
+              <span
+                className={
+                  formData.installationId || formData.newInstallation?.name
+                    ? "text-green-700"
+                    : "text-gray-600"
+                }
+              >
+                Instalación seleccionada o creada
+              </span>
+            </div>
+            <div className="flex items-center gap-3 p-3 border rounded-lg">
+              <input
+                type="checkbox"
+                checked={formData.circuits.length > 0}
+                readOnly
+                className="w-4 h-4"
+              />
+              <span className={formData.circuits.length > 0 ? "text-green-700" : "text-gray-600"}>
+                Circuitos añadidos ({formData.circuits.length})
+              </span>
+            </div>
+            <div className="flex items-center gap-3 p-3 border rounded-lg">
+              <input
+                type="checkbox"
+                checked={!!formData.insulationResistance && !!formData.rcdTestCurrent}
+                readOnly
+                className="w-4 h-4"
+              />
+              <span
+                className={
+                  formData.insulationResistance && formData.rcdTestCurrent
+                    ? "text-green-700"
+                    : "text-gray-600"
+                }
+              >
+                Mediciones eléctricas completadas
+              </span>
+            </div>
+            <div className="flex items-center gap-3 p-3 border rounded-lg">
+              <input type="checkbox" checked={!!pdfHtml} readOnly className="w-4 h-4" />
+              <span className={pdfHtml ? "text-green-700" : "text-gray-600"}>
+                Certificado PDF generado
+              </span>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* TAB 4: ESQUEMA UNIFILAR */}
+        <TabsContent value="unifilar" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-semibold text-gray-900">Esquema Unifilar</h3>
+              <p className="text-xs text-gray-500 mt-0.5">Pasa el cursor sobre cada circuito para ver sus datos</p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setUnifilarRequested(true)}
+              disabled={unifilarQuery.isFetching}
+            >
+              {unifilarQuery.isFetching ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generando...</>
+              ) : (
+                <><RefreshCw className="w-4 h-4 mr-2" />Generar</>
+              )}
+            </Button>
+          </div>
+
+          <Card>
+            <CardContent className="pt-4 overflow-x-auto">
+              {unifilarQuery.data?.svgContent ? (
+                <UnifilarDiagramFromSVG svgContent={unifilarQuery.data.svgContent} />
+              ) : (
+                <div className="text-center py-12 text-gray-400 text-sm">
+                  {unifilarQuery.isFetching
+                    ? "Generando esquema..."
+                    : "Haz clic en \"Generar\" para crear el esquema unifilar"}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}

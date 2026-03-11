@@ -35,7 +35,7 @@ const INSTALLER_CATEGORIES = [
 ];
 
 export default function SettingsPage() {
-  const { data: profile, isLoading } = trpc.profile.get.useQuery();
+  const { data: profile, isLoading, refetch } = trpc.profile.get.useQuery();
   const upsertMutation = trpc.profile.upsert.useMutation();
   
   const [formData, setFormData] = useState({
@@ -45,6 +45,7 @@ export default function SettingsPage() {
     installerNumber: profile?.installerNumber || "",
     installerCategory: profile?.installerCategory || "",
     autonomousCommunity: profile?.autonomousCommunity || "",
+    companyAuthNumber: (profile as any)?.companyAuthNumber || "",
     phone: profile?.phone || "",
     address: profile?.address || "",
     postalCode: profile?.postalCode || "",
@@ -164,6 +165,17 @@ export default function SettingsPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Label>Nº autorización empresa instaladora</Label>
+                <Input
+                  value={formData.companyAuthNumber}
+                  onChange={(e) =>
+                    setFormData({ ...formData, companyAuthNumber: e.target.value })
+                  }
+                  placeholder="Ej: EIA-28-2024-001"
+                />
               </div>
 
               <div>

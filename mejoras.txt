@@ -1,0 +1,12 @@
+Problema a arreglar. Cuanto pasamos el cursor por encima de un item dentro del esquema unifilar, aparece una mini ventana explicativa, el Problema
+es que esta ventana solo aparece cuando pasamos el cursor por los ultimos tres items (por lo menos en el esquemna de prueba)
+y se queda pillada, me gustaria que solo apareciese la ventana cuando hacemos click en ese item, y que desapareciese si ahcemos click en el mismo item
+o en otro item (apareciendo entonces la ventana correspondiente a este item).
+
+En revisiones hay un problema un poco tonto, deberiamos poder programar la revision sin conocer el id del certificado. Podria salir un desplegable de los certificados conocidos.
+
+El icono de rayo al ladeo del titulo CertIA megustaria que desapareciese, y que a su vez el texto fuera un boton que te redirige a la pagina princiapl.
+
+Tambien tenemos que arreglar el sistema de login y registro (configurar correspondientemente con los bloqueantes del MVP)
+
+Pagina principal: eliminar boton ver demo y Eliminar boton ver planes y precios, tambien eliminar la pagina a la que referencia

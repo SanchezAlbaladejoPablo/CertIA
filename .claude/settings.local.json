@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm add:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm check:*)",
+      "Bash(pnpm approve-builds:*)",
+      "Bash(pnpm rebuild:*)",
+      "Read(//c/Program Files/Google/Chrome/Application/**)",
+      "Read(//c/Program Files \\(x86\\)/Google/Chrome/Application/**)",
+      "Read(//c/Program Files/Google/**)",
+      "Bash(where chrome)",
+      "Bash(where msedge)",
+      "Bash(PUPPETEER_SKIP_DOWNLOAD=true pnpm remove:*)",
+      "Bash(python:*)",
+      "Bash(wmic logicaldisk:*)",
+      "Bash(PNPM_HOME=\"D:/pnpm-store\" pnpm add:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm db:push:*)",
+      "Bash(node:*)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:api.github.com)"
+    ]
+  }
+}

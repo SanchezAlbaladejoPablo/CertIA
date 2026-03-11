@@ -5,35 +5,22 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
-import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import { useAuth } from "./_core/hooks/useAuth";
-import { Loader2 } from "lucide-react";
-
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin w-8 h-8" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Auth />;
-  }
-
-  return <Component />;
-}
+import Pricing from "./pages/pricing";
+import CertificateWizard from "./pages/dashboard/CertificateWizard";
+import ClientDetail from "./pages/dashboard/ClientDetail";
+import Portal from "./pages/Portal";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/auth" component={Auth} />
-      <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
+      <Route path="/pricing" component={Pricing} />
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/dashboard/certificates/new" component={CertificateWizard} />
+      <Route path="/dashboard/certificates/:id" component={CertificateWizard} />
+      <Route path="/dashboard/clients/:id" component={ClientDetail} />
+      <Route path="/portal/:token" component={Portal} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
