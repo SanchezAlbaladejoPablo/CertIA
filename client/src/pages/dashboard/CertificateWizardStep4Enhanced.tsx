@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Sparkles, PlusCircle, Trash2, Loader2 } from "lucide-react";
+import { Sparkles, PlusCircle, Trash2, Loader2, CheckCircle2, XCircle } from "lucide-react";
 
 interface Circuit {
   id?: string;
@@ -55,6 +55,36 @@ const CABLE_MATERIALS = ["Cu", "Al"];
 const CABLE_INSULATIONS = ["PVC", "XLPE"];
 const MCB_CURVES = ["B", "C", "D"];
 
+function PiaIndicator({ circuit }: { circuit: Circuit }) {
+  const section = parseFloat(circuit.cableSection) || 0;
+  const enabled = circuit.mcbRating > 0 && section > 0;
+
+  const query = trpc.calculations.protectionCoordination.useQuery(
+    {
+      mcbRating: circuit.mcbRating,
+      cableSection: section,
+      material: circuit.cableMaterial as "Cu" | "Al",
+      insulation: circuit.cableInsulation as "PVC" | "XLPE",
+      correctionFactor: 1.0,
+    },
+    { enabled }
+  );
+
+  if (!enabled) return null;
+  if (query.isPending) return <Loader2 className="w-3 h-3 animate-spin text-gray-400" />;
+  if (!query.data) return null;
+
+  return query.data.valid ? (
+    <span title="PIA adecuado al cable">
+      <CheckCircle2 className="w-4 h-4 text-green-500" />
+    </span>
+  ) : (
+    <span title={query.data.message}>
+      <XCircle className="w-4 h-4 text-red-500" />
+    </span>
+  );
+}
+
 export default function Step4Enhanced({ formData, setFormData }: Step4Props) {
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -96,11 +126,26 @@ export default function Step4Enhanced({ formData, setFormData }: Step4Props) {
     { enabled: false }
   );
 
+  const piaCableSection = parseFloat(circuitForm.cableSection) || 0;
+  const piaValidationEnabled =
+    circuitForm.mcbRating > 0 && piaCableSection > 0;
+
+  const protectionCoordinationQuery = trpc.calculations.protectionCoordination.useQuery(
+    {
+      mcbRating: circuitForm.mcbRating,
+      cableSection: piaCableSection,
+      material: circuitForm.cableMaterial as "Cu" | "Al",
+      insulation: circuitForm.cableInsulation as "PVC" | "XLPE",
+      correctionFactor: 1.0,
+    },
+    { enabled: piaValidationEnabled }
+  );
+
   const handleSuggestCircuits = async () => {
     try {
       const result = await suggestCircuitsMutation.refetch();
-      if (result.data?.data?.circuits) {
-        const suggestedCircuits = result.data.data.circuits.map((c: any) => ({
+      if (result.data?.circuits) {
+        const suggestedCircuits = result.data.circuits.map((c: any) => ({
           id: `suggested-${Math.random()}`,
           circuitNumber: c.circuitNumber,
           circuitName: c.circuitName,
@@ -268,8 +313,11 @@ export default function Step4Enhanced({ formData, setFormData }: Step4Props) {
                   <p>{circuit.installedPower}W</p>
                 </div>
                 <div>
-                  <span className="text-gray-500 text-xs">Sección</span>
-                  <p>{circuit.cableSection}mm²</p>
+                  <span className="text-gray-500 text-xs">Sección / PIA</span>
+                  <div className="flex items-center gap-1">
+                    <p>{circuit.cableSection}mm² / {circuit.mcbRating}A</p>
+                    <PiaIndicator circuit={circuit} />
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -485,6 +533,25 @@ export default function Step4Enhanced({ formData, setFormData }: Step4Props) {
                   }
                   placeholder="10"
                 />
+                {piaValidationEnabled && (
+                  <div className="mt-1">
+                    {protectionCoordinationQuery.isPending ? (
+                      <span className="text-xs text-gray-400 flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Verificando...
+                      </span>
+                    ) : protectionCoordinationQuery.data ? (
+                      protectionCoordinationQuery.data.valid ? (
+                        <span className="text-xs text-green-600 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> PIA adecuado al cable
+                        </span>
+                      ) : (
+                        <span className="text-xs text-red-600 flex items-center gap-1">
+                          <XCircle className="w-3 h-3" /> {protectionCoordinationQuery.data.message}
+                        </span>
+                      )
+                    ) : null}
+                  </div>
+                )}
               </div>
               <div>
                 <Label>Curva</Label>

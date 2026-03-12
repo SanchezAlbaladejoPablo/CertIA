@@ -1,47 +1,22 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
-import { getLoginUrl } from "@/const";
 import { Zap, Clock, Lightbulb, FileText, CheckCircle, ArrowRight } from "lucide-react";
 
 export default function Home() {
-  const { isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
-  const loginUrl = getLoginUrl();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Navigation */}
       <nav className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="bg-blue-600 text-white p-2 rounded-lg">
-              <Zap className="w-6 h-6" />
-            </div>
-            <span className="font-bold text-xl text-gray-900">CertIA</span>
-          </div>
-          <div className="flex gap-4">
-            {isAuthenticated ? (
-              <Button
-                onClick={() => setLocation("/dashboard")}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                Dashboard
-              </Button>
-            ) : (
-              <>
-                <Button variant="outline" onClick={() => window.location.href = loginUrl}>
-                  Iniciar sesión
-                </Button>
-                <Button
-                  className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => window.location.href = loginUrl}
-                >
-                  Empezar gratis
-                </Button>
-              </>
-            )}
-          </div>
+          <span className="font-bold text-xl text-gray-900">CertIA</span>
+          <Button
+            onClick={() => setLocation("/dashboard")}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Ir al Dashboard
+          </Button>
         </div>
       </nav>
 
@@ -57,13 +32,10 @@ export default function Home() {
           <Button
             size="lg"
             className="bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => window.location.href = loginUrl}
+            onClick={() => setLocation("/dashboard")}
           >
             Empezar gratis
             <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-          <Button size="lg" variant="outline">
-            Ver demo
           </Button>
         </div>
       </section>
@@ -109,40 +81,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">
-            Planes simples y transparentes
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-2xl mx-auto">
-            <PricingCard
-              name="Free"
-              price="0€"
-              description="Perfecto para empezar"
-              features={[
-                "1 certificado",
-                "Gestión de clientes",
-                "Cálculos básicos",
-              ]}
-            />
-            <PricingCard
-              name="Pro"
-              price="49€"
-              period="/mes"
-              description="Para profesionales"
-              features={[
-                "Certificados ilimitados",
-                "Gestión completa",
-                "IA avanzada",
-                "Soporte prioritario",
-              ]}
-              highlighted
-            />
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="bg-blue-600 text-white py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -155,7 +93,7 @@ export default function Home() {
           <Button
             size="lg"
             className="bg-white text-blue-600 hover:bg-gray-100"
-            onClick={() => window.location.href = loginUrl}
+            onClick={() => setLocation("/dashboard")}
           >
             Empezar gratis ahora
           </Button>
@@ -184,49 +122,3 @@ function Feature({ icon, title, description }: { icon: React.ReactNode; title: s
   );
 }
 
-function PricingCard({
-  name,
-  price,
-  period,
-  description,
-  features,
-  highlighted,
-}: {
-  name: string;
-  price: string;
-  period?: string;
-  description: string;
-  features: string[];
-  highlighted?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-lg p-8 ${
-        highlighted
-          ? "bg-blue-600 text-white ring-2 ring-blue-600 scale-105"
-          : "bg-white border border-gray-200"
-      }`}
-    >
-      <h3 className="text-2xl font-bold mb-2">{name}</h3>
-      <p className={highlighted ? "text-blue-100" : "text-gray-600"}>{description}</p>
-      <div className="my-6">
-        <span className="text-4xl font-bold">{price}</span>
-        {period && <span className={highlighted ? "text-blue-100" : "text-gray-600"}>{period}</span>}
-      </div>
-      <ul className="space-y-3 mb-8">
-        {features.map((feature, i) => (
-          <li key={i} className="flex items-center gap-2">
-            <CheckCircle className="w-5 h-5" />
-            {feature}
-          </li>
-        ))}
-      </ul>
-      <Button
-        className={highlighted ? "w-full bg-white text-blue-600 hover:bg-gray-100" : "w-full"}
-        variant={highlighted ? "default" : "outline"}
-      >
-        Empezar
-      </Button>
-    </div>
-  );
-}

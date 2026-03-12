@@ -1,1 +1,75 @@
-/**\n * Procedimientos de base de datos para gestión de certificados\n */\n\nimport { db } from \"./db\";\nimport { certificates } from \"../drizzle/schema\";\nimport { eq, and } from \"drizzle-orm\";\n\n/**\n * Obtiene todos los certificados de un usuario\n */\nexport async function getCertificatesByUserId(userId: number) {\n  try {\n    const certs = await db.query.certificates.findMany({\n      where: (cert) => eq(cert.userId, userId),\n      orderBy: (cert) => cert.createdAt,\n    });\n    return certs;\n  } catch (error) {\n    console.error(\"Error getting certificates:\", error);\n    throw error;\n  }\n}\n\n/**\n * Obtiene un certificado específico\n */\nexport async function getCertificateById(id: number, userId: number) {\n  try {\n    const cert = await db.query.certificates.findFirst({\n      where: (cert) => and(eq(cert.id, id), eq(cert.userId, userId)),\n    });\n    return cert || null;\n  } catch (error) {\n    console.error(\"Error getting certificate:\", error);\n    throw error;\n  }\n}\n\n/**\n * Crea un nuevo certificado\n */\nexport async function createCertificate(\n  userId: number,\n  data: Partial<typeof certificates.$inferInsert>\n) {\n  try {\n    const result = await db.insert(certificates).values({\n      userId,\n      ...data,\n      status: \"draft\",\n      createdAt: new Date(),\n      updatedAt: new Date(),\n    });\n\n    return result;\n  } catch (error) {\n    console.error(\"Error creating certificate:\", error);\n    throw error;\n  }\n}\n\n/**\n * Actualiza un certificado\n */\nexport async function updateCertificate(\n  id: number,\n  userId: number,\n  data: Partial<typeof certificates.$inferInsert>\n) {\n  try {\n    const result = await db\n      .update(certificates)\n      .set({\n        ...data,\n        updatedAt: new Date(),\n      })\n      .where(and(eq(certificates.id, id), eq(certificates.userId, userId)));\n\n    return result;\n  } catch (error) {\n    console.error(\"Error updating certificate:\", error);\n    throw error;\n  }\n}\n\n/**\n * Elimina un certificado\n */\nexport async function deleteCertificate(id: number, userId: number) {\n  try {\n    const result = await db\n      .delete(certificates)\n      .where(and(eq(certificates.id, id), eq(certificates.userId, userId)));\n\n    return result;\n  } catch (error) {\n    console.error(\"Error deleting certificate:\", error);\n    throw error;\n  }\n}\n\n/**\n * Duplica un certificado existente\n */\nexport async function duplicateCertificate(id: number, userId: number) {\n  try {\n    const originalCert = await getCertificateById(id, userId);\n\n    if (!originalCert) {\n      throw new Error(\"Certificate not found\");\n    }\n\n    // Crear una copia del certificado\n    const newCertData = {\n      ...originalCert,\n      id: undefined, // Generar nuevo ID\n      certificateNumber: undefined, // No copiar número de certificado\n      status: \"draft\" as const, // Siempre comenzar como borrador\n      createdAt: new Date(),\n      updatedAt: new Date(),\n    };\n\n    const result = await db.insert(certificates).values(newCertData);\n\n    return result;\n  } catch (error) {\n    console.error(\"Error duplicating certificate:\", error);\n    throw error;\n  }\n}\n\n/**\n * Cambia el estado de un certificado\n */\nexport async function updateCertificateStatus(\n  id: number,\n  userId: number,\n  status: \"draft\" | \"issued\" | \"signed\" | \"archived\"\n) {\n  try {\n    const result = await db\n      .update(certificates)\n      .set({\n        status,\n        updatedAt: new Date(),\n      })\n      .where(and(eq(certificates.id, id), eq(certificates.userId, userId)));\n\n    return result;\n  } catch (error) {\n    console.error(\"Error updating certificate status:\", error);\n    throw error;\n  }\n}\n\n/**\n * Obtiene estadísticas de certificados del usuario\n */\nexport async function getCertificateStats(userId: number) {\n  try {\n    const certs = await getCertificatesByUserId(userId);\n\n    const stats = {\n      total: certs.length,\n      draft: certs.filter((c) => c.status === \"draft\").length,\n      issued: certs.filter((c) => c.status === \"issued\").length,\n      signed: certs.filter((c) => c.status === \"signed\").length,\n      archived: certs.filter((c) => c.status === \"archived\").length,\n    };\n\n    return stats;\n  } catch (error) {\n    console.error(\"Error getting certificate stats:\", error);\n    throw error;\n  }\n}\n\n/**\n * Genera un número de certificado único\n */\nexport async function generateCertificateNumber(\n  userId: number,\n  year: number = new Date().getFullYear()\n): Promise<string> {\n  try {\n    const certs = await getCertificatesByUserId(userId);\n    const yearCerts = certs.filter(\n      (c) => new Date(c.createdAt).getFullYear() === year\n    );\n\n    const nextNumber = yearCerts.length + 1;\n    const paddedNumber = String(nextNumber).padStart(4, \"0\");\n\n    return `CIE-${year}-${paddedNumber}`;\n  } catch (error) {\n    console.error(\"Error generating certificate number:\", error);\n    throw error;\n  }\n}\n\n/**\n * Archiva certificados antiguos (más de 2 años)\n */\nexport async function archiveOldCertificates(userId: number) {\n  try {\n    const twoYearsAgo = new Date();\n    twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);\n\n    const result = await db\n      .update(certificates)\n      .set({\n        status: \"archived\",\n        updatedAt: new Date(),\n      })\n      .where(\n        and(\n          eq(certificates.userId, userId),\n          eq(certificates.status, \"signed\"),\n          // Aquí iría una condición de fecha, pero Drizzle ORM requiere operadores específicos\n        )\n      );\n\n    return result;\n  } catch (error) {\n    console.error(\"Error archiving old certificates:\", error);\n    throw error;\n  }\n}\n
+/**
+ * Procedimientos de base de datos para gestión de certificados
+ * NOTE: This file is superseded by server/db.ts which uses the mock-fallback pattern.
+ * Kept for reference but not imported by routers.ts.
+ */
+
+import { eq, and } from "drizzle-orm";
+import { getDb } from "./db";
+import { certificates } from "../drizzle/schema";
+
+export async function getCertificatesByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(certificates).where(eq(certificates.userId, userId));
+}
+
+export async function getCertificateById(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select()
+    .from(certificates)
+    .where(and(eq(certificates.id, id), eq(certificates.userId, userId)))
+    .limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function createCertificate(
+  userId: number,
+  data: Partial<typeof certificates.$inferInsert>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.insert(certificates).values({
+    userId,
+    clientId: 0,
+    installationId: 0,
+    status: "draft",
+    ...data,
+  });
+}
+
+export async function updateCertificate(
+  id: number,
+  userId: number,
+  data: Partial<typeof certificates.$inferInsert>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db
+    .update(certificates)
+    .set({ ...data, updatedAt: new Date() })
+    .where(and(eq(certificates.id, id), eq(certificates.userId, userId)));
+}
+
+export async function deleteCertificate(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db
+    .delete(certificates)
+    .where(and(eq(certificates.id, id), eq(certificates.userId, userId)));
+}
+
+export async function updateCertificateStatus(
+  id: number,
+  userId: number,
+  status: "draft" | "issued" | "submitted" | "registered" | "signed" | "archived"
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db
+    .update(certificates)
+    .set({ status, updatedAt: new Date() })
+    .where(and(eq(certificates.id, id), eq(certificates.userId, userId)));
+}

@@ -73,7 +73,7 @@ export default function CertificatesPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-2xl font-bold text-green-600">
-              {certificates?.filter(c => c.status === "completed").length || 0}
+              {certificates?.filter(c => c.status === "issued").length || 0}
             </div>
             <p className="text-gray-600 text-sm">Completados</p>
           </CardContent>
@@ -134,13 +134,13 @@ export default function CertificatesPage() {
                       <span>Potencia: {cert.installedPower || "—"} W</span>
                       <span>Tensión: {cert.supplyVoltage || "—"} V</span>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        cert.status === "completed"
+                        cert.status === "issued" || cert.status === "signed"
                           ? "bg-green-100 text-green-700"
                           : cert.status === "draft"
                           ? "bg-yellow-100 text-yellow-700"
                           : "bg-gray-100 text-gray-700"
                       }`}>
-                        {cert.status === "completed" ? "Completado" : cert.status === "draft" ? "Borrador" : "Archivado"}
+                        {cert.status === "issued" ? "Emitido" : cert.status === "signed" ? "Firmado" : cert.status === "draft" ? "Borrador" : "Archivado"}
                       </span>
                     </div>
                   </div>

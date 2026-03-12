@@ -16,6 +16,9 @@
 
   <body>
     <div id="root"></div>
+    <!-- AutoFirma: biblioteca oficial del Ministerio para firma electrónica con DNIe/FNMT -->
+    <!-- Archivo en client/public/afirma/js/autoscript.js (descargado de github.com/ctt-gob-es/clienteafirma) -->
+    <script src="/afirma/js/autoscript.js" onerror="console.warn('[AutoFirma] autoscript.js no encontrado. Coloca el archivo en client/public/afirma/js/autoscript.js')"></script>
     <script type="module" src="/src/main.tsx"></script>
     <script
       defer

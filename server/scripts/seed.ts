@@ -38,14 +38,21 @@ async function seed() {
 
     await db.insert(schema.profiles).values({
       userId: userId,
-      fullName: "Juan Pérez Instalaciones",
       companyName: "Pérez Electricidad S.L.",
       cifNif: "B12345678",
-      installerNumber: "2026-AUTH-99",
-      installerCategory: "Básica",
+      companyAuthNumber: "2026-AUTH-99",
       autonomousCommunity: "Madrid",
       phone: "600123456",
       address: "Calle de la Energía 1, Madrid",
+    });
+
+    await db.insert(schema.installers).values({
+      userId: userId,
+      fullName: "Juan Pérez García",
+      nif: "12345678A",
+      installerNumber: "28/2024/0001",
+      installerCategory: "Básica",
+      isActive: true,
     });
 
     console.log("🏢 Creando cliente e instalación...");

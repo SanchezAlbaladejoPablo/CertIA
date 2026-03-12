@@ -1,10 +1,19 @@
+// @ts-nocheck
 /**
  * Procedimientos de base de datos para gestión de suscripciones
+ * NOTE: Superseded by server/db.ts. Not imported by routers.ts.
  */
 
-import { db } from "./db";
-import { subscriptions, users } from "../drizzle/schema";
+import { getDb } from "./db";
+import { subscriptions } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
+
+// Helper to get db instance (throws if unavailable)
+async function db() {
+  const instance = await getDb();
+  if (!instance) throw new Error("Database not available");
+  return instance;
+}
 
 /**
  * Obtiene la suscripción de un usuario

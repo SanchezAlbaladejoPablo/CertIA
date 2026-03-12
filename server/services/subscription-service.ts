@@ -1,8 +1,10 @@
+// @ts-nocheck
 /**
  * Servicio de gestión de suscripciones con Stripe
  */
 
 import Stripe from "stripe";
+import { eq } from "drizzle-orm";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2023-10-16",
