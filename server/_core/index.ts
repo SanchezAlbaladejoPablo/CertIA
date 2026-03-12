@@ -6,7 +6,6 @@ import rateLimit from "express-rate-limit";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerLocalAuthRoutes } from "./localAuth";
 import { registerDevAuthRoutes } from "./devAuth";
-import { registerChatRoutes } from "./chat";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -71,8 +70,6 @@ async function startServer() {
   registerLocalAuthRoutes(app);
   // Dev login bypass (solo development, ignorado en producción)
   registerDevAuthRoutes(app);
-  // Chat API with streaming and tool calling
-  registerChatRoutes(app);
   // PDF REST endpoint — /api/pdf/:id
   // Returns self-printing HTML for the certificate (browser opens print dialog)
   app.get("/api/pdf/:id", async (req, res) => {
