@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, protectedProcedure } from "./_core/trpc";
 import { z } from "zod";
 import * as db from "./db";
+import { calculateCableSection } from "./services/electrical-calculations";
 
 // Helper: parsea una dirección española en tipo de vía, nombre y número
 function parseSpanishAddress(address: string): { sigla: string; nombre: string; numero: string } | null {
@@ -52,13 +53,11 @@ export const appRouter = router({
     ),
     upsert: protectedProcedure
       .input(z.object({
-        fullName: z.string().optional(),
         companyName: z.string().optional(),
         cifNif: z.string().optional(),
-        installerNumber: z.string().optional(),
-        installerCategory: z.string().optional(),
-        autonomousCommunity: z.string().optional(),
+        email: z.string().optional(),
         companyAuthNumber: z.string().optional(),
+        autonomousCommunity: z.string().optional(),
         phone: z.string().optional(),
         address: z.string().optional(),
         postalCode: z.string().optional(),
@@ -68,7 +67,53 @@ export const appRouter = router({
       .mutation(({ ctx, input }) =>
         db.upsertProfile({ userId: ctx.user.id, ...input })
       ),
+  }),
 
+  // Installer procedures
+  installers: router({
+    list: protectedProcedure.query(({ ctx }) =>
+      db.getInstallersByUserId(ctx.user.id)
+    ),
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(({ ctx, input }) =>
+        db.getInstallerById(input.id, ctx.user.id)
+      ),
+    create: protectedProcedure
+      .input(z.object({
+        fullName: z.string(),
+        nif: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().optional(),
+        installerNumber: z.string().optional(),
+        installerCategory: z.string().optional(),
+        signatureUrl: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(({ ctx, input }) =>
+        db.createInstaller({ userId: ctx.user.id, ...input })
+      ),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        fullName: z.string().optional(),
+        nif: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().optional(),
+        installerNumber: z.string().optional(),
+        installerCategory: z.string().optional(),
+        signatureUrl: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(({ ctx, input }) => {
+        const { id, ...data } = input;
+        return db.updateInstaller(id, ctx.user.id, data);
+      }),
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ ctx, input }) =>
+        db.deleteInstaller(input.id, ctx.user.id)
+      ),
   }),
 
   // Subscription procedures
@@ -291,6 +336,7 @@ export const appRouter = router({
       .input(z.object({
         clientId: z.number(),
         installationId: z.number(),
+        installerId: z.number().optional(),
         installationType: z.string().optional(),
         locationCategory: z.string().optional(),
         electrificationGrade: z.string().optional(),
@@ -333,6 +379,7 @@ export const appRouter = router({
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
+        installerId: z.number().optional(),
         installationType: z.string().optional(),
         locationCategory: z.string().optional(),
         electrificationGrade: z.string().optional(),
@@ -971,9 +1018,37 @@ export const appRouter = router({
         designCurrent: z.string().optional(),
         loadDescription: z.string().optional(),
       }))
-      .mutation(({ input }) =>
-        db.createCircuit(input)
-      ),
+      .mutation(async ({ ctx, input }) => {
+        // Auto-calcular caída de tensión e intensidad de diseño (ITC-BT-19)
+        let voltageDrop = input.voltageDrop;
+        let designCurrent = input.designCurrent;
+
+        if (!voltageDrop && input.cableSection && input.installedPower && input.length) {
+          const cert = await db.getCertificateById(input.certificateId, ctx.user.id);
+          if (cert) {
+            try {
+              const calc = calculateCableSection(
+                input.installedPower,
+                cert.supplyVoltage ?? 230,
+                cert.phases ?? 1,
+                parseFloat(input.length),
+                (input.cableMaterial as 'Cu' | 'Al') ?? 'Cu',
+                3,
+                (input.cableInsulation as 'PVC' | 'XLPE') ?? 'PVC',
+                cert.ambientTemp ?? 30,
+                cert.groupedCables ?? 1,
+                cert.installMethod ?? 'embedded_conduit',
+              );
+              voltageDrop = calc.voltageDrop.toString();
+              designCurrent = calc.current.toString();
+            } catch {
+              // Cálculo no crítico — continuar sin él
+            }
+          }
+        }
+
+        return db.createCircuit({ ...input, voltageDrop, designCurrent });
+      }),
     update: protectedProcedure
       .input(z.object({
         id: z.number(),

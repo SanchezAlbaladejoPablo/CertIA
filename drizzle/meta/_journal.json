@@ -22,6 +22,20 @@
       "when": 1773084586585,
       "tag": "0002_striped_ink",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1773267486266,
+      "tag": "0003_volatile_karma",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1741737600000,
+      "tag": "0004_installers",
+      "breakpoints": true
     }
   ]
 }

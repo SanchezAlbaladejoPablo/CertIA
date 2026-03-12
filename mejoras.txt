@@ -10,3 +10,7 @@ El icono de rayo al ladeo del titulo CertIA megustaria que desapareciese, y que 
 Tambien tenemos que arreglar el sistema de login y registro (configurar correspondientemente con los bloqueantes del MVP)
 
 Pagina principal: eliminar boton ver demo y Eliminar boton ver planes y precios, tambien eliminar la pagina a la que referencia
+
+
+Pro-tip: Hacer una investigacion profunda sobre los documentos que cada comunidad autonoma solicita. Ademas deberemos saber para que
+caso especifico (tipo de instalacion electrica) sirve nuestra aplicacion, con el objetivo de ampliar las posibilidades de esta.

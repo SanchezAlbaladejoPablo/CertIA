@@ -32,6 +32,7 @@ export default function InspectionsPage() {
   const [form, setForm] = useState({ certificateId: "", scheduledDate: "", notes: "" });
 
   const { data: inspections = [], refetch } = trpc.inspections.list.useQuery();
+  const { data: certificates = [] } = trpc.certificates.list.useQuery();
   const createMutation = trpc.inspections.create.useMutation();
   const updateMutation = trpc.inspections.update.useMutation();
   const deleteMutation = trpc.inspections.delete.useMutation();
@@ -99,13 +100,24 @@ export default function InspectionsPage() {
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label>ID del certificado</Label>
-                <Input
+                <Label>Certificado</Label>
+                <Select
                   value={form.certificateId}
-                  onChange={(e) => setForm({ ...form, certificateId: e.target.value })}
-                  placeholder="Ej: 1"
-                  type="number"
-                />
+                  onValueChange={(v) => setForm({ ...form, certificateId: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un certificado..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {certificates.map((cert) => (
+                      <SelectItem key={cert.id} value={String(cert.id)}>
+                        {cert.certificateNumber
+                          ? `${cert.certificateNumber} — ${cert.clientName}`
+                          : `#${cert.id} — ${cert.clientName}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>Fecha programada</Label>

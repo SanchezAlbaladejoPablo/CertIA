@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -45,7 +46,10 @@ export default function CertificatesManagement() {
   const [auditDialog, setAuditDialog] = useState<{ certId: number; certNumber: string } | null>(null);
   const [autoFirmaAvailable, setAutoFirmaAvailable] = useState<boolean | null>(null);
   const [unifilarDialog, setUnifilarDialog] = useState<{ certId: number; certNumber: string | null } | null>(null);
+  const [installerDialog, setInstallerDialog] = useState(false);
+  const [selectedInstallerId, setSelectedInstallerId] = useState<string>("");
 
+  const { data: installers = [] } = trpc.installers.list.useQuery();
   const certificatesQuery = trpc.certificates.list.useQuery();
   const deleteCertificateMutation = trpc.certificates.delete.useMutation();
   const duplicateCertificateMutation = trpc.certificates.duplicate.useMutation();
@@ -231,7 +235,7 @@ export default function CertificatesManagement() {
             <h1 className="text-3xl font-bold text-gray-900">Certificados</h1>
             <p className="text-gray-600 mt-1">Gestiona todos tus certificados de instalación</p>
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setLocation("/dashboard/certificates/new")}>+ Nuevo Certificado</Button>
+          <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { setSelectedInstallerId(""); setInstallerDialog(true); }}>+ Nuevo Certificado</Button>
         </div>
 
         {/* Ciclo de vida */}
@@ -553,6 +557,48 @@ export default function CertificatesManagement() {
                 </div>
               </div>
             ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal selección de instalador */}
+      <Dialog open={installerDialog} onOpenChange={setInstallerDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Seleccionar instalador</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            {installers.length === 0 ? (
+              <div className="text-center py-6 text-gray-500">
+                <p className="text-sm">No tienes instaladores registrados.</p>
+                <p className="text-xs mt-1">Ve a <strong>Configuración → Instaladores</strong> para añadir uno.</p>
+              </div>
+            ) : (
+              <RadioGroup value={selectedInstallerId} onValueChange={setSelectedInstallerId} className="space-y-2">
+                {(installers as any[]).filter((i: any) => i.isActive).map((ins: any) => (
+                  <label
+                    key={ins.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${selectedInstallerId === String(ins.id) ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}
+                  >
+                    <RadioGroupItem value={String(ins.id)} />
+                    <div>
+                      <p className="font-medium text-gray-900">{ins.fullName}</p>
+                      <p className="text-xs text-gray-500">{[ins.installerCategory, ins.installerNumber].filter(Boolean).join(" · ") || "Sin datos profesionales"}</p>
+                    </div>
+                  </label>
+                ))}
+              </RadioGroup>
+            )}
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setInstallerDialog(false)}>Cancelar</Button>
+              <Button
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={!selectedInstallerId}
+                onClick={() => { setInstallerDialog(false); setLocation(`/dashboard/certificates/new?installerId=${selectedInstallerId}`); }}
+              >
+                Continuar
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

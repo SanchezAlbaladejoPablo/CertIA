@@ -1,6 +1,7 @@
 import { eq, and } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, profiles, subscriptions, clients, installations, certificates, circuits, templates, inspections, clientTokens, signatureAuditTrail, InsertProfile, InsertSubscription, InsertClient, InsertInstallation, InsertCertificate, InsertCircuit, InsertTemplate, InsertInspection, InsertClientToken, InsertSignatureAuditTrail } from "../drizzle/schema";
+import mysql from "mysql2/promise";
+import { InsertUser, users, profiles, installers, subscriptions, clients, installations, certificates, circuits, templates, inspections, clientTokens, signatureAuditTrail, InsertProfile, InsertInstaller, InsertSubscription, InsertClient, InsertInstallation, InsertCertificate, InsertCircuit, InsertTemplate, InsertInspection, InsertClientToken, InsertSignatureAuditTrail } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import * as mock from './_core/mockStore';
 
@@ -10,7 +11,11 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      const pool = mysql.createPool({
+        uri: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: true },
+      });
+      _db = drizzle(pool) as any;
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -88,6 +93,19 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function setUserPasswordHash(openId: string, passwordHash: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ passwordHash }).where(eq(users.openId, openId));
 }
 
 // Profile queries
@@ -459,6 +477,43 @@ export async function getClientTokenByToken(token: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+
+// Installer queries
+export async function getInstallersByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(installers).where(eq(installers.userId, userId));
+}
+
+export async function getInstallerById(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(installers).where(and(eq(installers.id, id), eq(installers.userId, userId))).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function createInstaller(installer: InsertInstaller) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(installers).values(installer);
+  return result;
+}
+
+export async function updateInstaller(id: number, userId: number, data: Partial<InsertInstaller>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const updateData: Record<string, any> = {};
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined) updateData[key] = value;
+  });
+  await db.update(installers).set(updateData).where(and(eq(installers.id, id), eq(installers.userId, userId)));
+}
+
+export async function deleteInstaller(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(installers).where(and(eq(installers.id, id), eq(installers.userId, userId)));
+}
 
 // SignatureAuditTrail — INMUTABLE: solo INSERT y SELECT
 export async function createSignatureAuditTrail(record: InsertSignatureAuditTrail) {

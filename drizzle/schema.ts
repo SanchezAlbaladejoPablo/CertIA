@@ -11,11 +11,12 @@ export const users = mysqlTable("users", {
    * Use this for relations between tables.
    */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
+  /** Unique user identifier — UUID generated on register (previously Manus openId). */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
+  passwordHash: varchar("passwordHash", { length: 255 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
@@ -25,30 +26,28 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// Profiles: Datos profesionales del instalador autorizado
+// Profiles: Datos de la empresa instaladora
 export const profiles = mysqlTable("profiles", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().unique(),
-  
-  // Datos profesionales
-  fullName: varchar("fullName", { length: 255 }),
+
+  // Datos empresa
   companyName: varchar("companyName", { length: 255 }),
   cifNif: varchar("cifNif", { length: 20 }),
-  
-  // Datos instalador autorizado
-  installerNumber: varchar("installerNumber", { length: 50 }),
-  installerCategory: varchar("installerCategory", { length: 50 }),
-  autonomousCommunity: varchar("autonomousCommunity", { length: 50 }),
+  email: varchar("email", { length: 320 }),
+
+  // Autorización empresa
   companyAuthNumber: varchar("companyAuthNumber", { length: 50 }),
-  
+  autonomousCommunity: varchar("autonomousCommunity", { length: 50 }),
+
   // Contacto
   phone: varchar("phone", { length: 20 }),
   address: text("address"),
   postalCode: varchar("postalCode", { length: 10 }),
   city: varchar("city", { length: 100 }),
   province: varchar("province", { length: 100 }),
-  
-  // Avatar
+
+  // Logo empresa
   avatarUrl: text("avatarUrl"),
 
   // Metadata
@@ -58,6 +57,35 @@ export const profiles = mysqlTable("profiles", {
 
 export type Profile = typeof profiles.$inferSelect;
 export type InsertProfile = typeof profiles.$inferInsert;
+
+// Installers: Instaladores autorizados de la empresa
+export const installers = mysqlTable("installers", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+
+  // Datos personales
+  fullName: varchar("fullName", { length: 255 }).notNull(),
+  nif: varchar("nif", { length: 20 }),
+  phone: varchar("phone", { length: 20 }),
+  email: varchar("email", { length: 320 }),
+
+  // Datos profesionales
+  installerNumber: varchar("installerNumber", { length: 50 }),
+  installerCategory: varchar("installerCategory", { length: 50 }),
+
+  // Firma digital (URL a imagen de la firma)
+  signatureUrl: text("signatureUrl"),
+
+  // Estado
+  isActive: boolean("isActive").default(true).notNull(),
+
+  // Metadata
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Installer = typeof installers.$inferSelect;
+export type InsertInstaller = typeof installers.$inferInsert;
 
 // Subscriptions: Planes de suscripción
 export const subscriptions = mysqlTable("subscriptions", {
@@ -156,6 +184,7 @@ export const certificates = mysqlTable("certificates", {
   userId: int("userId").notNull(),
   clientId: int("clientId").notNull(),
   installationId: int("installationId").notNull(),
+  installerId: int("installerId"),
   
   // Estado
   status: mysqlEnum("status", ["draft", "issued", "submitted", "registered", "signed", "archived"]).default("draft").notNull(),

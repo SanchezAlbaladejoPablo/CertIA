@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -23,53 +23,44 @@ function UnifilarSVGView({ svgContent }: { svgContent: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<TooltipState>({ visible: false, x: 0, y: 0, data: null });
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const node = (e.target as Element).closest<SVGGElement>(".circuit-node");
 
-    const nodes = container.querySelectorAll<SVGGElement>(".circuit-node");
+    if (!node) {
+      setTooltip((t) => ({ ...t, visible: false }));
+      return;
+    }
 
-    const handleEnter = (e: Event) => {
-      const el = e.currentTarget as SVGGElement;
-      const raw = el.dataset.circuit;
-      if (!raw) return;
-      try {
-        const data: CircuitData = JSON.parse(raw);
-        const containerRect = container.getBoundingClientRect();
-        const elRect = el.getBoundingClientRect();
-        setTooltip({
+    const raw = node.dataset.circuit;
+    if (!raw) return;
+
+    try {
+      const data: CircuitData = JSON.parse(raw);
+      const containerRect = e.currentTarget.getBoundingClientRect();
+      const nodeRect = node.getBoundingClientRect();
+      setTooltip((prev) => {
+        if (prev.visible && prev.data?.num === data.num) {
+          return { ...prev, visible: false };
+        }
+        return {
           visible: true,
-          x: elRect.left - containerRect.left + elRect.width / 2,
-          y: elRect.top - containerRect.top - 8,
+          x: nodeRect.left - containerRect.left + nodeRect.width / 2,
+          y: nodeRect.top - containerRect.top - 8,
           data,
-        });
-      } catch {
-        // ignore malformed JSON
-      }
-    };
-
-    const handleLeave = () => setTooltip((t) => ({ ...t, visible: false }));
-
-    nodes.forEach((n) => {
-      n.addEventListener("mouseenter", handleEnter);
-      n.addEventListener("mouseleave", handleLeave);
-    });
-
-    return () => {
-      nodes.forEach((n) => {
-        n.removeEventListener("mouseenter", handleEnter);
-        n.removeEventListener("mouseleave", handleLeave);
+        };
       });
-    };
-  }, [svgContent]);
+    } catch {
+      // ignore malformed JSON
+    }
+  };
 
   return (
-    <div ref={containerRef} className="relative overflow-x-auto">
+    <div ref={containerRef} className="relative overflow-x-auto" onClick={handleClick}>
       <div dangerouslySetInnerHTML={{ __html: svgContent }} />
 
       {tooltip.visible && tooltip.data && (
         <div
-          className="absolute z-50 pointer-events-none bg-white border border-gray-200 rounded-lg shadow-xl p-3 text-xs min-w-[170px]"
+          className="absolute z-50 bg-white border border-gray-200 rounded-lg shadow-xl p-3 text-xs min-w-[170px]"
           style={{
             left: tooltip.x,
             top: tooltip.y,

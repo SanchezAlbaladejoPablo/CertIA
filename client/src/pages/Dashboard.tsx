@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Menu, LogOut, Settings, FileText, Users, Zap, LayoutTemplate, CalendarClock, BookOpen } from "lucide-react";
+import { Menu, LogOut, Settings, FileText, Users, LayoutTemplate, CalendarClock, BookOpen } from "lucide-react";
 import CertificatesManagement from "./dashboard/certificates-management";
 import ClientsPage from "./dashboard/Clients";
 import SettingsPage from "./dashboard/Settings";
@@ -13,10 +13,12 @@ import InspectionsPage from "./dashboard/Inspections";
 import HowItWorksPage from "./dashboard/HowItWorks";
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth({ redirectOnUnauthenticated: true });
   const [, setLocation] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("certificates");
+
+  if (loading) return null;
 
   const handleLogout = async () => {
     await logout();
@@ -34,12 +36,12 @@ export default function Dashboard() {
         {/* Logo */}
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           {sidebarOpen && (
-            <div className="flex items-center gap-2">
-              <div className="bg-blue-600 text-white p-2 rounded-lg">
-                <Zap className="w-5 h-5" />
-              </div>
-              <span className="font-bold text-lg text-gray-900">CertIA</span>
-            </div>
+            <button
+              onClick={() => setLocation("/")}
+              className="font-bold text-lg text-gray-900 hover:text-blue-600 transition-colors"
+            >
+              CertIA
+            </button>
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}

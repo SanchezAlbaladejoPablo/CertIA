@@ -40,36 +40,19 @@ const MCB_CURVES = ["B", "C", "D"];
 interface CertificateFormData {
   // Step 1: Client
   clientId?: number;
-  newClient?: {
-    type?: "person" | "company";
-    name?: string;
-    dniNif?: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    postalCode?: string;
-    city?: string;
-    province?: string;
-  };
 
   // Step 2: Installation
   installationId?: number;
-  newInstallation?: {
-    name?: string;
-    type?: string;
-    address?: string;
-    postalCode?: string;
-    city?: string;
-    province?: string;
-    cadastralReference?: string;
-    cups?: string;
-  };
   installationType: string;
   locationCategory: string;
   electrificationGrade: string;
   supplyVoltage: number;
   installedPower: number;
+  maxAdmissiblePower?: number;
   phases: number;
+  lightingPointsCount?: number;
+  outletsCount?: number;
+  serviceCommissionDate?: string;
 
   // Step 3: Derivation & Board
   groundingSystem: string;
@@ -114,7 +97,7 @@ interface CertificateFormData {
 }
 
 const STEPS = [
-  { id: 1, name: "Cliente", description: "Selecciona o crea un cliente" },
+  { id: 1, name: "Cliente", description: "Selecciona un cliente" },
   { id: 2, name: "Instalación", description: "Datos de la instalación" },
   { id: 3, name: "Derivación", description: "Derivación individual y cuadro" },
   { id: 4, name: "Circuitos", description: "Circuitos de la instalación" },
@@ -129,6 +112,10 @@ const EMPTY_FORM: CertificateFormData = {
   supplyVoltage: 230,
   installedPower: 0,
   phases: 1,
+  lightingPointsCount: undefined,
+  outletsCount: undefined,
+  maxAdmissiblePower: undefined,
+  serviceCommissionDate: undefined,
   groundingSystem: "TT",
   ambientTemp: 30,
   installMethod: "embedded_conduit",
@@ -156,15 +143,19 @@ export default function CertificateWizard() {
   const editId = params?.id ? parseInt(params.id) : null;
   const isEditing = !!editId;
 
+  // Leer installerId de la query string (?installerId=X)
+  const urlInstallerId = typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("installerId")
+    : null;
+  const installerId = urlInstallerId ? parseInt(urlInstallerId) : undefined;
+
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<CertificateFormData>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
   const { data: profile } = trpc.profile.get.useQuery();
   const { data: clients } = trpc.clients.list.useQuery();
-  const createClientMutation = trpc.clients.create.useMutation();
   const { data: installations } = trpc.installations.list.useQuery();
-  const createInstallationMutation = trpc.installations.create.useMutation();
   const createCertificateMutation = trpc.certificates.create.useMutation();
   const updateCertificateMutation = trpc.certificates.update.useMutation();
   const createCircuitMutation = trpc.circuits.create.useMutation();
@@ -196,6 +187,12 @@ export default function CertificateWizard() {
       supplyVoltage: existingCert.supplyVoltage ?? 230,
       installedPower: existingCert.installedPower ?? 0,
       phases: existingCert.phases ?? 1,
+      maxAdmissiblePower: (existingCert as any).maxAdmissiblePower ?? undefined,
+      lightingPointsCount: (existingCert as any).lightingPointsCount ?? undefined,
+      outletsCount: (existingCert as any).outletsCount ?? undefined,
+      serviceCommissionDate: (existingCert as any).serviceCommissionDate
+        ? new Date((existingCert as any).serviceCommissionDate).toISOString().split("T")[0]
+        : undefined,
       diLength: existingCert.diLength || "",
       diCableSection: existingCert.diCableSection || "",
       diCableMaterial: (existingCert.diCableMaterial as "Cu" | "Al") || "Cu",
@@ -239,30 +236,6 @@ export default function CertificateWizard() {
 
   const handleNext = async () => {
     if (!validateStep(currentStep)) return;
-
-    if (currentStep === 1 && formData.newClient) {
-      try {
-        const result = await createClientMutation.mutateAsync(formData.newClient as any);
-        setFormData({ ...formData, clientId: (result as any).insertId, newClient: undefined });
-      } catch (error) {
-        toast.error("Error al crear el cliente");
-        return;
-      }
-    }
-
-    if (currentStep === 2 && formData.newInstallation && formData.clientId) {
-      try {
-        const result = await createInstallationMutation.mutateAsync({
-          clientId: formData.clientId!,
-          ...formData.newInstallation,
-        } as any);
-        setFormData({ ...formData, installationId: (result as any).insertId, newInstallation: undefined });
-      } catch (error) {
-        toast.error("Error al crear la instalación");
-        return;
-      }
-    }
-
     if (currentStep < STEPS.length) {
       setCurrentStep(currentStep + 1);
     }
@@ -288,6 +261,10 @@ export default function CertificateWizard() {
         installationType: formData.installationType,
         locationCategory: formData.locationCategory,
         electrificationGrade: formData.electrificationGrade,
+        maxAdmissiblePower: formData.maxAdmissiblePower,
+        lightingPointsCount: formData.lightingPointsCount,
+        outletsCount: formData.outletsCount,
+        serviceCommissionDate: formData.serviceCommissionDate,
         groundingSystem: formData.groundingSystem,
         ambientTemp: formData.ambientTemp,
         installMethod: formData.installMethod,
@@ -323,6 +300,7 @@ export default function CertificateWizard() {
         const result = await createCertificateMutation.mutateAsync({
           clientId: formData.clientId,
           installationId: formData.installationId,
+          installerId,
           ...extendedData,
         });
         certId = (result as any).insertId;
@@ -361,8 +339,8 @@ export default function CertificateWizard() {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        if (!formData.clientId && !formData.newClient?.name) {
-          toast.error("Selecciona o crea un cliente");
+        if (!formData.clientId) {
+          toast.error("Selecciona un cliente");
           return false;
         }
         return true;
@@ -371,8 +349,8 @@ export default function CertificateWizard() {
           toast.error("Completa los datos de la instalación");
           return false;
         }
-        if (!formData.installationId && !formData.newInstallation?.name) {
-          toast.error("Selecciona o crea una instalación");
+        if (!formData.installationId) {
+          toast.error("Selecciona una instalación");
           return false;
         }
         return true;
@@ -496,7 +474,7 @@ export default function CertificateWizard() {
           <Button
             onClick={handleNext}
             className="bg-blue-600 hover:bg-blue-700"
-            disabled={createClientMutation.isPending || createInstallationMutation.isPending}
+            disabled={saving}
           >
             Siguiente
             <ChevronRight className="w-4 h-4 ml-2" />
@@ -517,189 +495,63 @@ function Step1Client({
   setFormData: (data: CertificateFormData) => void;
   clients?: any[];
 }) {
-  const [useExisting, setUseExisting] = useState(true);
+  const [, setLocation] = useLocation();
 
   return (
-    <div className="space-y-6">
-      {/* FASE 5.1: Cargar plantilla */}
-      <div className="flex gap-4">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            checked={useExisting}
-            onChange={() => setUseExisting(true)}
-            className="w-4 h-4"
-          />
-          <span>Cliente existente</span>
-        </label>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            checked={!useExisting}
-            onChange={() => setUseExisting(false)}
-            className="w-4 h-4"
-          />
-          <span>Nuevo cliente</span>
-        </label>
+    <div className="space-y-4">
+      <div>
+        <Label>Selecciona un cliente *</Label>
+        <Select
+          value={formData.clientId?.toString() || ""}
+          onValueChange={(value) =>
+            setFormData({ ...formData, clientId: parseInt(value), installationId: undefined })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecciona un cliente..." />
+          </SelectTrigger>
+          <SelectContent>
+            {clients?.map((client) => (
+              <SelectItem key={client.id} value={client.id.toString()}>
+                {client.name} — {client.dniNif || "Sin DNI"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      {useExisting ? (
-        <div>
-          <Label>Selecciona un cliente</Label>
-          <Select
-            value={formData.clientId?.toString() || ""}
-            onValueChange={(value) =>
-              setFormData({ ...formData, clientId: parseInt(value) })
-            }
+      {(!clients || clients.length === 0) && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          No tienes clientes creados todavía.{" "}
+          <button
+            className="font-semibold underline"
+            onClick={() => setLocation("/dashboard/clients")}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona un cliente" />
-            </SelectTrigger>
-            <SelectContent>
-              {clients?.map((client) => (
-                <SelectItem key={client.id} value={client.id.toString()}>
-                  {client.name} ({client.dniNif || "Sin DNI"})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            Crea un cliente primero
+          </button>{" "}
+          y vuelve aquí.
         </div>
-      ) : (
-        <div className="space-y-4">
-          <div>
-            <Label>Tipo</Label>
-            <Select
-              value={formData.newClient?.type || "person"}
-              onValueChange={(value: any) =>
-                setFormData({
-                  ...formData,
-                  newClient: { ...formData.newClient, type: value },
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="person">Persona física</SelectItem>
-                <SelectItem value="company">Empresa</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      )}
 
-          <div>
-            <Label>Nombre / Razón social *</Label>
-            <Input
-              value={formData.newClient?.name || ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  newClient: { ...formData.newClient, name: e.target.value },
-                })
-              }
-              placeholder="Juan Pérez"
-            />
-          </div>
+      {clients && clients.length > 0 && !formData.clientId && (
+        <p className="text-sm text-gray-500">
+          ¿El cliente no está en la lista?{" "}
+          <button
+            className="font-semibold text-blue-600 underline"
+            onClick={() => setLocation("/dashboard/clients")}
+          >
+            Créalo en Clientes
+          </button>{" "}
+          y vuelve aquí.
+        </p>
+      )}
 
-          <div>
-            <Label>DNI / NIF</Label>
-            <Input
-              value={formData.newClient?.dniNif || ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  newClient: { ...formData.newClient, dniNif: e.target.value },
-                })
-              }
-              placeholder="12345678A"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={formData.newClient?.email || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    newClient: { ...formData.newClient, email: e.target.value },
-                  })
-                }
-                placeholder="correo@ejemplo.com"
-              />
-            </div>
-            <div>
-              <Label>Teléfono</Label>
-              <Input
-                value={formData.newClient?.phone || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    newClient: { ...formData.newClient, phone: e.target.value },
-                  })
-                }
-                placeholder="+34 600 000 000"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label>Dirección</Label>
-            <Input
-              value={formData.newClient?.address || ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  newClient: { ...formData.newClient, address: e.target.value },
-                })
-              }
-              placeholder="C/ Mayor 23"
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label>Código postal</Label>
-              <Input
-                value={formData.newClient?.postalCode || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    newClient: { ...formData.newClient, postalCode: e.target.value },
-                  })
-                }
-                placeholder="28001"
-              />
-            </div>
-            <div>
-              <Label>Ciudad</Label>
-              <Input
-                value={formData.newClient?.city || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    newClient: { ...formData.newClient, city: e.target.value },
-                  })
-                }
-                placeholder="Madrid"
-              />
-            </div>
-            <div>
-              <Label>Provincia</Label>
-              <Input
-                value={formData.newClient?.province || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    newClient: { ...formData.newClient, province: e.target.value },
-                  })
-                }
-                placeholder="Madrid"
-              />
-            </div>
-          </div>
+      {formData.clientId && clients && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+          Cliente seleccionado:{" "}
+          <span className="font-semibold">
+            {clients.find((c) => c.id === formData.clientId)?.name}
+          </span>
         </div>
       )}
     </div>
@@ -716,184 +568,57 @@ function Step2Installation({
   setFormData: (data: CertificateFormData) => void;
   installations?: any[];
 }) {
-  const [useExisting, setUseExisting] = useState(true);
+  const [, setLocation] = useLocation();
 
-  const address = formData.newInstallation?.address ?? "";
-  const city = formData.newInstallation?.city ?? "";
-  const province = formData.newInstallation?.province ?? "";
-  const hasCadastralRef = !!(formData.newInstallation?.cadastralReference?.trim());
-  const cadastreEnabled = address.length >= 5 && city.length >= 2 && province.length >= 2 && !hasCadastralRef;
-
-  const cadastreQuery = trpc.cadastre.search.useQuery(
-    { address, city, province },
-    { enabled: cadastreEnabled }
-  );
-
-  // Auto-fill the cadastral reference when found
-  if (cadastreQuery.data?.found && cadastreQuery.data.reference && !hasCadastralRef) {
-    setFormData({
-      ...formData,
-      newInstallation: { ...formData.newInstallation, cadastralReference: cadastreQuery.data.reference },
-    });
-  }
+  // Filtrar instalaciones por cliente seleccionado en Step 1
+  const clientInstallations = installations?.filter(
+    (inst) => inst.clientId === formData.clientId
+  ) ?? [];
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-4">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            checked={useExisting}
-            onChange={() => setUseExisting(true)}
-            className="w-4 h-4"
-          />
-          <span>Instalación existente</span>
-        </label>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            checked={!useExisting}
-            onChange={() => setUseExisting(false)}
-            className="w-4 h-4"
-          />
-          <span>Nueva instalación</span>
-        </label>
+      <div>
+        <Label>Selecciona una instalación *</Label>
+        <Select
+          value={formData.installationId?.toString() || ""}
+          onValueChange={(value) =>
+            setFormData({ ...formData, installationId: parseInt(value) })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecciona una instalación..." />
+          </SelectTrigger>
+          <SelectContent>
+            {clientInstallations.map((inst) => (
+              <SelectItem key={inst.id} value={inst.id.toString()}>
+                {inst.name} — {inst.address || "Sin dirección"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {clientInstallations.length === 0 && (
+          <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            Este cliente no tiene instalaciones registradas.{" "}
+            <button
+              className="font-semibold underline"
+              onClick={() => setLocation("/dashboard/clients")}
+            >
+              Añádela desde Clientes
+            </button>{" "}
+            y vuelve aquí.
+          </div>
+        )}
+
+        {formData.installationId && clientInstallations.length > 0 && (
+          <div className="mt-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+            Instalación seleccionada:{" "}
+            <span className="font-semibold">
+              {clientInstallations.find((i) => i.id === formData.installationId)?.name}
+            </span>
+          </div>
+        )}
       </div>
-
-      {useExisting ? (
-        <div>
-          <Label>Selecciona una instalación</Label>
-          <Select
-            value={formData.installationId?.toString() || ""}
-            onValueChange={(value) =>
-              setFormData({ ...formData, installationId: parseInt(value) })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona una instalación" />
-            </SelectTrigger>
-            <SelectContent>
-              {installations?.map((inst) => (
-                <SelectItem key={inst.id} value={inst.id.toString()}>
-                  {inst.name} ({inst.address || "Sin dirección"})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div>
-            <Label>Nombre de la instalación *</Label>
-            <Input
-              value={formData.newInstallation?.name || ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  newInstallation: { ...formData.newInstallation, name: e.target.value },
-                })
-              }
-              placeholder="Vivienda Principal"
-            />
-          </div>
-
-          <div>
-            <Label>Dirección</Label>
-            <Input
-              value={formData.newInstallation?.address || ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  newInstallation: { ...formData.newInstallation, address: e.target.value },
-                })
-              }
-              placeholder="C/ Mayor 23"
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label>Código postal</Label>
-              <Input
-                value={formData.newInstallation?.postalCode || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    newInstallation: { ...formData.newInstallation, postalCode: e.target.value },
-                  })
-                }
-                placeholder="28001"
-              />
-            </div>
-            <div>
-              <Label>Ciudad</Label>
-              <Input
-                value={formData.newInstallation?.city || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    newInstallation: { ...formData.newInstallation, city: e.target.value },
-                  })
-                }
-                placeholder="Madrid"
-              />
-            </div>
-            <div>
-              <Label>Provincia</Label>
-              <Input
-                value={formData.newInstallation?.province || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    newInstallation: { ...formData.newInstallation, province: e.target.value },
-                  })
-                }
-                placeholder="Madrid"
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label>Referencia catastral</Label>
-            <div className="relative">
-              <Input
-                value={formData.newInstallation?.cadastralReference || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    newInstallation: { ...formData.newInstallation, cadastralReference: e.target.value },
-                  })
-                }
-                placeholder="Ej: 2823901TF3H5001S"
-                className={cadastreQuery.isFetching ? "pr-10" : ""}
-              />
-              {cadastreQuery.isFetching && (
-                <Loader2 className="absolute right-3 top-2.5 w-4 h-4 animate-spin text-gray-400" />
-              )}
-            </div>
-            {cadastreEnabled && !cadastreQuery.isFetching && cadastreQuery.data && !cadastreQuery.data.found && (
-              <p className="text-xs text-amber-600 mt-1">{cadastreQuery.data.error} — puedes introducirla manualmente</p>
-            )}
-            {hasCadastralRef && cadastreQuery.data?.found && (
-              <p className="text-xs text-green-600 mt-1">Referencia obtenida automáticamente del Catastro</p>
-            )}
-          </div>
-
-          <div>
-            <Label>CUPS</Label>
-            <Input
-              value={formData.newInstallation?.cups || ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  newInstallation: { ...formData.newInstallation, cups: e.target.value },
-                })
-              }
-              placeholder="Ej: ES0021000012345678AB"
-            />
-          </div>
-        </div>
-      )}
 
       <div className="border-t pt-6 space-y-4">
         <div>
@@ -1009,6 +734,57 @@ function Step2Installation({
             </p>
           </div>
         )}
+
+        <div>
+          <Label>Potencia máxima admisible (W)</Label>
+          <Input
+            type="number"
+            value={formData.maxAdmissiblePower ?? ""}
+            onChange={(e) =>
+              setFormData({ ...formData, maxAdmissiblePower: e.target.value ? parseInt(e.target.value) : undefined })
+            }
+            placeholder="Según IGA/caja general de protección"
+          />
+        </div>
+      </div>
+
+      <div className="border-t pt-6 space-y-4">
+        <h3 className="font-semibold text-gray-900">Puntos de utilización</h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label>Puntos de luz</Label>
+            <Input
+              type="number"
+              value={formData.lightingPointsCount ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, lightingPointsCount: e.target.value ? parseInt(e.target.value) : undefined })
+              }
+              placeholder="Nº puntos de luz"
+            />
+          </div>
+          <div>
+            <Label>Bases de enchufe</Label>
+            <Input
+              type="number"
+              value={formData.outletsCount ?? ""}
+              onChange={(e) =>
+                setFormData({ ...formData, outletsCount: e.target.value ? parseInt(e.target.value) : undefined })
+              }
+              placeholder="Nº tomas de corriente"
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label>Fecha de puesta en servicio</Label>
+          <Input
+            type="date"
+            value={formData.serviceCommissionDate ?? ""}
+            onChange={(e) =>
+              setFormData({ ...formData, serviceCommissionDate: e.target.value || undefined })
+            }
+          />
+        </div>
       </div>
     </div>
   );
@@ -1992,13 +1768,13 @@ function Step6Review({
         <div className="grid grid-cols-2 gap-6">
           <div>
             <p className="text-sm text-gray-600 mb-1">Cliente</p>
-            <p className="font-semibold">{client?.name || formData.newClient?.name}</p>
-            <p className="text-sm text-gray-500">{client?.dniNif || formData.newClient?.dniNif}</p>
+            <p className="font-semibold">{client?.name}</p>
+            <p className="text-sm text-gray-500">{client?.dniNif}</p>
           </div>
           <div>
             <p className="text-sm text-gray-600 mb-1">Instalación</p>
-            <p className="font-semibold">{installation?.name || formData.newInstallation?.name}</p>
-            <p className="text-sm text-gray-500">{installation?.address || formData.newInstallation?.address}</p>
+            <p className="font-semibold">{installation?.name}</p>
+            <p className="text-sm text-gray-500">{installation?.address}</p>
           </div>
         </div>
       </div>
