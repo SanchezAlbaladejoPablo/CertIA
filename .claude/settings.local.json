@@ -27,7 +27,11 @@
       "Bash(taskkill:*)",
       "Bash(cmd:*)",
       "Bash(npx drizzle-kit:*)",
-      "Bash(ls D:\\\\CertIA\\\\drizzle/*.sql)"
+      "Bash(ls D:\\\\CertIA\\\\drizzle/*.sql)",
+      "Bash(export PATH=\"$PATH:/home/pablo/.nvm/versions/node/v24.13.0/lib/node_modules/corepack/shims\" && pnpm build 2>&1)",
+      "Bash(git -C /home/pablo/Descargas/certia status)",
+      "Bash(git add:*)",
+      "Bash(git -C /home/pablo/Descargas/certia commit -m \"$\\(cat <<'EOF'\ndocs: README, documentación técnica MVP y limpieza de código muerto\n\n- Añade README.md con descripción, stack, comandos y enlaces a docs\n- Crea documentación técnica: propuesta de valor, arquitectura, dominio REBT y roadmap\n- Elimina documentos de sesiones anteriores\n- Elimina código muerto de Manus OAuth \\(oauth.ts, manusTypes.ts, OAuthService\\)\n- Simplifica sdk.ts a solo JWT sign/verify y authenticateRequest\n- Simplifica env.ts a las 3 variables realmente usadas\n- Elimina endpoint /api/chat \\(Forge API, no usado por CertIA\\)\n- Añade railway.toml, .railwayignore y engines en package.json para deploy\n\nCo-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>\nEOF\n\\)\")"
     ]
   }
 }
